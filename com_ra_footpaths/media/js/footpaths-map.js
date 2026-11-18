@@ -43,11 +43,19 @@ ra.display.footpaths = function (options, data) {
 		return box;
 	}
 
-	// Fade the map outside the parish: a large box with the parish cut out of it. The box is about 150 km
-	// across rather than the whole world, because the OS grid (British National Grid) can't project the world.
-	function fadeOutside(geojson, around) {
-		var g = geojson.type === "Feature" ? geojson.geometry : geojson;
-		var polygons = g.type === "Polygon" ? [g.coordinates] : (g.type === "MultiPolygon" ? g.coordinates : []);
+	// Fade the map outside the given parish boundaries: a large box with the parishes cut out of it. The box
+	// is about 150 km across rather than the whole world, because the OS grid (British National Grid) can't
+	// project the world.
+	function fadeOutside(boundaries, around) {
+		var polygons = [];
+		boundaries.forEach(function (geojson) {
+			var g = geojson && geojson.type === "Feature" ? geojson.geometry : geojson;
+			if (g && g.type === "Polygon") {
+				polygons.push(g.coordinates);
+			} else if (g && g.type === "MultiPolygon") {
+				polygons = polygons.concat(g.coordinates);
+			}
+		});
 		if (!polygons.length || !around.isValid()) {
 			return;
 		}
@@ -83,16 +91,23 @@ ra.display.footpaths = function (options, data) {
 	function drawParishes(list, bounds) {
 		// Names on the map when there's room; on a phone they would pile up, so show them on touch instead.
 		var labels = window.innerWidth >= 768;
-		list.forEach(function (p) {
+		var area = L.latLngBounds([]);
+		var layers = list.map(function (p) {
 			var base = {color: "#4A2160", weight: 2, opacity: 0.9, fillColor: p.colour, fillOpacity: 0.25};
 			var layer = L.geoJSON(p.boundary, {style: base});
 			layer.bindPopup(parishPopup(p));
-			layer.bindTooltip(p.name, labels ? {permanent: true, direction: "center", className: "rafp-parish-label"} : {sticky: true});
 			layer.on("mouseover", function () { layer.setStyle({weight: 3.5, fillOpacity: 0.5}); });
 			layer.on("mouseout", function () { layer.setStyle(base); });
-			layer.addTo(map);
-			bounds.extend(layer.getBounds());
+			area.extend(layer.getBounds());
+			return {layer: layer, name: p.name};
 		});
+		// Fade everything outside the club's parishes first, so the parishes sit on top of it.
+		fadeOutside(list.map(function (p) { return p.boundary; }), area);
+		layers.forEach(function (l) {
+			l.layer.addTo(map);
+			l.layer.bindTooltip(l.name, labels ? {permanent: true, direction: "center", className: "rafp-parish-label"} : {sticky: true});
+		});
+		bounds.extend(area);
 	}
 
 	this.load = function () {
@@ -106,7 +121,7 @@ ra.display.footpaths = function (options, data) {
 				interactive: false,
 				style: {color: "#4A2160", weight: 2.5, opacity: 0.9, fill: false, dashArray: "6 4"}
 			});
-			fadeOutside(data.boundary, outline.getBounds());
+			fadeOutside([data.boundary], outline.getBounds());
 			outline.addTo(map);
 			bounds.extend(outline.getBounds());
 			parish.extend(outline.getBounds());
