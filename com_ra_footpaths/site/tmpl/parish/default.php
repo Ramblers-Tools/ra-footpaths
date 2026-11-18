@@ -45,6 +45,7 @@ foreach ($this->paths as $p) {
 			</select>
 		</label>
 		<label><input type="checkbox" name="due" data-rafp-for="rafp-path-table"> Not inspected for 12 months</label>
+		<label><input type="checkbox" name="photos" data-rafp-for="rafp-path-table"> With photos</label>
 		<span class="rafp-count" data-rafp-count="rafp-path-table" aria-live="polite"></span>
 	</div>
 
@@ -66,8 +67,12 @@ foreach ($this->paths as $p) {
 			$isDue = $this->isDue($p->inspection_date);
 			$remarks = trim((string) $p->remarks);
 			?>
-			<tr data-search="<?php echo $this->escape(strtolower($name . ' ' . str_replace(' ', '', $name))); ?>" data-grade="<?php echo $grade; ?>" data-due="<?php echo $isDue ? '1' : '0'; ?>">
-				<th scope="row"><a href="<?php echo $this->pathUrl((int) $p->id); ?>"><?php echo $this->escape($name); ?></a></th>
+			<tr data-search="<?php echo $this->escape(strtolower($name . ' ' . str_replace(' ', '', $name))); ?>" data-grade="<?php echo $grade; ?>" data-due="<?php echo $isDue ? '1' : '0'; ?>" data-photos="<?php echo (int) $p->photos ? '1' : '0'; ?>">
+				<th scope="row"><a href="<?php echo $this->pathUrl((int) $p->id); ?>"><?php echo $this->escape($name); ?></a><?php
+					if ((int) $p->photos) :
+						$label = (int) $p->photos === 1 ? '1 photo' : (int) $p->photos . ' photos'; ?>
+					<span class="rafp-photo-count" title="<?php echo $label; ?>"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M4 8h3l2-3h6l2 3h3v11H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/></svg><span class="visually-hidden"><?php echo $label; ?></span><span aria-hidden="true"><?php echo (int) $p->photos; ?></span></span>
+					<?php endif; ?></th>
 				<td><?php echo FootpathsHelper::gradeChip($grade); ?></td>
 				<td class="num<?php echo $isDue ? ' rafp-due' : ''; ?>"><?php echo $p->inspection_date ? HTMLHelper::_('date', $p->inspection_date, 'j M Y') : 'Never'; ?></td>
 				<td class="rafp-hide-sm"><?php echo $this->escape((string) $p->inspector); ?></td>

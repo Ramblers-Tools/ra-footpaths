@@ -1,14 +1,15 @@
 /**
  * RA Footpaths: filters for the path and parish tables. A table opts in with data-rafp-filter;
  * its filter controls are the elements with data-rafp-for="<table id>".
- * Rows carry data-search (text), data-grade (A-D or N) and data-due ("1" when not inspected for 12 months).
+ * Rows carry data-search (text), data-grade (A-D or N), data-due ("1" when not inspected for 12 months) and
+ * data-photos ("1" when the path has photos).
  */
 (function () {
 	"use strict";
 
 	function apply(table) {
 		var controls = document.querySelectorAll('[data-rafp-for="' + table.id + '"]');
-		var search = "", grade = "", due = false;
+		var search = "", grade = "", due = false, photos = false;
 
 		controls.forEach(function (c) {
 			if (c.name === "search") {
@@ -17,6 +18,8 @@
 				grade = c.value;
 			} else if (c.name === "due") {
 				due = c.checked;
+			} else if (c.name === "photos") {
+				photos = c.checked;
 			}
 		});
 
@@ -24,7 +27,8 @@
 		table.querySelectorAll("tbody tr").forEach(function (row) {
 			var ok = (!search || (row.dataset.search || "").indexOf(search) !== -1)
 				&& (!grade || row.dataset.grade === grade)
-				&& (!due || row.dataset.due === "1");
+				&& (!due || row.dataset.due === "1")
+				&& (!photos || row.dataset.photos === "1");
 			row.hidden = !ok;
 			if (ok) {
 				shown++;

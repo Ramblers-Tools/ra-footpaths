@@ -38,7 +38,12 @@ class ParishModel extends BaseDatabaseModel
 		$sql = 'SELECT p.id, p.type, p.number, p.length_m, p.start_gridref, p.end_gridref,'
 			. ' ST_AsGeoJSON(p.route) AS route,'
 			. ' lp.inspection_id, lp.inspection_date, lp.grade, lp.remarks, ins.name AS inspector,'
-			. ' (SELECT COUNT(*) FROM ' . $db->quoteName('#__ra_footpaths_faults', 'f') . ' WHERE f.inspection_id = lp.inspection_id) AS faults'
+			. ' (SELECT COUNT(*) FROM ' . $db->quoteName('#__ra_footpaths_faults', 'f') . ' WHERE f.inspection_id = lp.inspection_id) AS faults,'
+			// Photos from every inspection of the path, not just the latest.
+			. ' (SELECT COUNT(*) FROM ' . $db->quoteName('#__ra_footpaths_fault_photos', 'ph')
+			. ' JOIN ' . $db->quoteName('#__ra_footpaths_faults', 'f2') . ' ON f2.id = ph.fault_id'
+			. ' JOIN ' . $db->quoteName('#__ra_footpaths_inspections', 'i2') . ' ON i2.id = f2.inspection_id'
+			. ' WHERE i2.path_id = p.id) AS photos'
 			. ' FROM (' . $latest . ') AS lp'
 			. ' JOIN ' . $db->quoteName('#__ra_footpaths_paths', 'p') . ' ON p.id = lp.path_id'
 			. ' LEFT JOIN ' . $db->quoteName('#__ra_footpaths_inspectors', 'ins') . ' ON ins.id = lp.inspector_id'
