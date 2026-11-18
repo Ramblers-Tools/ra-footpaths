@@ -12,4 +12,6 @@ for d in src tmpl services sql language; do rsync -a --delete "administrator/$d/
 cp administrator/access.xml administrator/config.xml ra_footpaths.xml "$site/administrator/components/com_ra_footpaths/"
 cp administrator/language/en-GB/*.ini "$site/administrator/language/en-GB/"
 rsync -a --delete media/ "$site/media/com_ra_footpaths/"
+# New media version, so browsers (and Cloudflare in front of dev) fetch the new CSS and JS instead of cached copies.
+rm -rf "$site/administrator/cache/_media_version"
 echo "Synced com_ra_footpaths into $site"
