@@ -30,5 +30,8 @@ $labels = [
 			</tbody>
 		</table>
 		<p class="text-muted small"><?php echo Text::sprintf('COM_RA_FOOTPATHS_DASHBOARD_PHOTOS', $this->escape($this->photoPath)); ?></p>
+		<?php if ($this->photosInSite) : ?>
+			<div class="alert alert-warning"><?php echo Text::_('COM_RA_FOOTPATHS_DASHBOARD_PHOTOS_IN_SITE'); ?></div>
+		<?php endif; ?>
 	</div>
 </div>

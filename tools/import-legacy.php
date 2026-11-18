@@ -355,10 +355,17 @@ try {
 			throw new RuntimeException('Cannot create photo folder ' . $photoDir);
 		}
 
-		if (!$dryRun && str_starts_with(realpath($photoDir) ?: $photoDir, realpath($site) ?: $site)) {
-			// Inside the website folder: refuse direct web access (Apache). Photos go through the component.
-			file_put_contents($photoDir . '/.htaccess', "Require all denied\n");
-			file_put_contents($photoDir . '/index.html', '');
+		$inside = str_starts_with((realpath($photoDir) ?: $photoDir) . '/', (realpath($site) ?: $site) . '/');
+		if ($inside) {
+			$warn[] = 'Photo folder ' . $photoDir . ' is inside the website: it relies on .htaccess (Apache only). On live, set'
+				. ' the photo folder in Options to one outside the web root.';
+		}
+		if (!$dryRun && $inside) {
+			// Refuse direct web access (Apache). Photos go through the component's access check.
+			if (file_put_contents($photoDir . '/.htaccess', "Require all denied\n") === false
+				|| file_put_contents($photoDir . '/index.html', '') === false) {
+				throw new RuntimeException('Cannot protect photo folder ' . $photoDir . ' (writing .htaccess failed)');
+			}
 		}
 
 		foreach ($photos as $legacyFault => $file) {

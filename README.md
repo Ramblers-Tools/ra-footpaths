@@ -34,10 +34,16 @@ as entered is kept in `grade_recorded`.
 
 ### Photos
 
-Kept in the folder set in Options (default `<site>/private/footpath-photos`, with a `.htaccess` that refuses direct
-access) and served only through `task=photo.show`, after the access check. Thumbnails (480 px wide, turned upright,
-no EXIF) are made on first request in `thumbs/`. The originals still carry their EXIF data, including GPS on some:
-strip or re-encode them before go-live.
+Kept in the folder set in Options and served only through `task=photo.show`, after the access check, with
+`Cache-Control: private, no-store` (component pages are not cached either). The default, `<site>/private/footpath-photos`
+with a `.htaccess` that refuses direct access, is for dev only: `.htaccess` works on Apache alone. **On live, set the
+photo folder in Options to one outside the web root.** The importer warns when the folder is inside the site and stops
+if it can't write the `.htaccess`.
+
+Thumbnails (480 px wide, turned upright, no EXIF) are made on first request in `thumbs/`, written to a temporary file
+and renamed into place. Images over 40 megapixels or 25 MB are refused, and if a thumbnail can't be made the request
+gets a 404 rather than the original. The imported originals carry no EXIF or GPS (the old system re-saved them; checked
+on all 1,163), but new uploads may, so stage 2 must strip it on upload.
 
 ### Maps
 
@@ -56,7 +62,10 @@ they get the same layers as walk maps and the club OS key that RA Tweaks swaps i
    LEGACY_DB_USER=... LEGACY_DB_PASS=... php tools/import-legacy.php --site=/path/to/joomla --legacy-db=fp_legacy --photos=/path/to/images --replace
    ```
 
-4. Drop the legacy schema and delete the copied images folder afterwards: they hold contact details and GPS.
+4. Drop the legacy schema and delete the copied images folder afterwards: the schema holds volunteers' contact details.
+
+The importer copies photos before the database changes are committed, so a failed run can leave the photo folder
+holding the new files with the old data. It's a one-off dev tool: rerun it with `--replace` until it succeeds.
 
 Inspectors come across with name and active flag only (no email, phone or membership number).
 

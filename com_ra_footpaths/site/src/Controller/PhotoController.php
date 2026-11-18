@@ -21,6 +21,11 @@ class PhotoController extends BaseController
 {
 	private const THUMB_WIDTH = 480;
 
+	/** Refuse to decode anything larger than this (pixels and bytes), so one photo can't exhaust PHP's memory. */
+	private const MAX_PIXELS = 40_000_000;
+
+	private const MAX_BYTES = 25_000_000;
+
 	public function show(): void
 	{
 		$id = $this->input->getInt('id', 0);
@@ -45,16 +50,34 @@ class PhotoController extends BaseController
 		$send = $full;
 
 		if ($thumb) {
-			$send = $this->thumbnail($base, $file) ?? $full;
+			// Never fall back to the original: it is larger and could carry metadata the thumbnail strips.
+			$send = $this->thumbnail($base, $file);
+
+			if ($send === null) {
+				$this->notFound();
+
+				return;
+			}
+		}
+
+		$handle = @fopen($send, 'rb');
+		$size = $handle ? fstat($handle)['size'] : false;
+
+		if ($handle === false || $size === false) {
+			$this->notFound();
+
+			return;
 		}
 
 		$this->app->clearHeaders();
 		$this->app->setHeader('Content-Type', 'image/jpeg', true);
-		$this->app->setHeader('Content-Length', (string) filesize($send), true);
-		$this->app->setHeader('Cache-Control', 'private, max-age=86400', true);
+		$this->app->setHeader('Content-Length', (string) $size, true);
+		// Private records: browsers must not keep a copy that outlives the login.
+		$this->app->setHeader('Cache-Control', 'private, no-store', true);
 		$this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
 		$this->app->sendHeaders();
-		readfile($send);
+		fpassthru($handle);
+		fclose($handle);
 		$this->app->close();
 	}
 
@@ -68,20 +91,41 @@ class PhotoController extends BaseController
 			return $target;
 		}
 
-		if (!\function_exists('imagecreatefromjpeg') || (!is_dir($dir) && !@mkdir($dir, 0755, true))) {
+		if (!\function_exists('imagecreatefromjpeg') || (!is_dir($dir) && !@mkdir($dir, 0750, true))) {
 			return null;
 		}
 
-		$image = @imagecreatefromjpeg($base . '/' . $file);
+		$source = $base . '/' . $file;
+		$info = @getimagesize($source);
+
+		if ($info === false || $info[2] !== IMAGETYPE_JPEG || $info[0] * $info[1] > self::MAX_PIXELS
+			|| filesize($source) > self::MAX_BYTES) {
+			return null;
+		}
+
+		$image = @imagecreatefromjpeg($source);
 
 		if ($image === false) {
 			return null;
 		}
 
-		$image = $this->upright($image, $base . '/' . $file);
-		$small = imagescale($image, self::THUMB_WIDTH);
+		$image = $this->upright($image, $source);
+		$small = imagescale($image, min(self::THUMB_WIDTH, imagesx($image)));
 
-		if ($small === false || !imagejpeg($small, $target, 80)) {
+		// Write to a temporary name and rename, so a request at the same moment never sees a half-written file.
+		$temp = $target . '.' . bin2hex(random_bytes(6)) . '.tmp';
+
+		if ($small === false || !imagejpeg($small, $temp, 80)) {
+			@unlink($temp);
+
+			return null;
+		}
+
+		@chmod($temp, 0640);
+
+		if (!@rename($temp, $target)) {
+			@unlink($temp);
+
 			return null;
 		}
 

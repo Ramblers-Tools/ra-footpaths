@@ -1,6 +1,8 @@
-# Never commit legacy data: it holds volunteers' contact details and photo GPS.
+# Never commit legacy data: it holds volunteers' contact details. The component's own SQL (install, uninstall and
+# the versioned updates) must be committed, or a release built from git breaks the upgrade.
 *.sql
 !com_ra_footpaths/administrator/sql/*.sql
+!com_ra_footpaths/administrator/sql/updates/mysql/*.sql
 *.csv
 images/
 *.zip

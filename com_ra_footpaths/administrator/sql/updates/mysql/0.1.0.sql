@@ -1,0 +1,1 @@
+-- 0.1.0: first version (tables in install.mysql.utf8.sql).

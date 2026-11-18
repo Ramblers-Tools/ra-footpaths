@@ -28,6 +28,9 @@ class Dispatcher extends ComponentDispatcher
 		$user = $this->app->getIdentity();
 
 		if (FootpathsHelper::canView($user)) {
+			// Private records: no browser or proxy caching (Joomla then sends no-store headers).
+			$this->app->allowCache(false);
+
 			return;
 		}
 

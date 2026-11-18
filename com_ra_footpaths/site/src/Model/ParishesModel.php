@@ -23,7 +23,8 @@ class ParishesModel extends BaseDatabaseModel
 		$sql = 'SELECT pa.id, pa.name, ar.name AS area,'
 			. ' COUNT(lp.path_id) AS paths,'
 			. ' SUM(lp.inspection_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)) AS recent,'
-			. ' SUM(lp.inspection_date IS NULL) AS never,'
+			// Count real paths with no inspection at all (a parish with no paths gives one all-NULL row here).
+			. ' SUM(lp.path_id IS NOT NULL AND lp.inspection_id IS NULL) AS never,'
 			. ' SUM(lp.grade = ' . $db->quote('A') . ') AS grade_a,'
 			. ' SUM(lp.grade = ' . $db->quote('B') . ') AS grade_b,'
 			. ' SUM(lp.grade = ' . $db->quote('C') . ') AS grade_c,'

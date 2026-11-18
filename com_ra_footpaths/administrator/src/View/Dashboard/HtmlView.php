@@ -23,6 +23,9 @@ class HtmlView extends BaseHtmlView
 
 	protected string $photoPath = '';
 
+	/** True when the photo folder is inside the website, where only .htaccess (Apache) keeps it private. */
+	protected bool $photosInSite = false;
+
 	public function display($tpl = null): void
 	{
 		$db = Factory::getContainer()->get('DatabaseDriver');
@@ -41,6 +44,8 @@ class HtmlView extends BaseHtmlView
 		}
 
 		$this->photoPath = FootpathsHelper::photoPath();
+		$root = (realpath(JPATH_ROOT) ?: JPATH_ROOT) . '/';
+		$this->photosInSite = str_starts_with((realpath($this->photoPath) ?: $this->photoPath) . '/', $root);
 
 		ToolbarHelper::title(Text::_('COM_RA_FOOTPATHS'), 'map');
 
