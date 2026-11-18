@@ -43,6 +43,22 @@ ra.display.footpaths = function (options, data) {
 		return box;
 	}
 
+	// Fade the map outside the parish: a large box with the parish cut out of it. The box is about 150 km
+	// across rather than the whole world, because the OS grid (British National Grid) can't project the world.
+	function fadeOutside(geojson, around) {
+		var g = geojson.type === "Feature" ? geojson.geometry : geojson;
+		var polygons = g.type === "Polygon" ? [g.coordinates] : (g.type === "MultiPolygon" ? g.coordinates : []);
+		if (!polygons.length || !around.isValid()) {
+			return;
+		}
+		var c = around.getCenter();
+		var rings = [[[c.lat - 0.7, c.lng - 1.1], [c.lat - 0.7, c.lng + 1.1], [c.lat + 0.7, c.lng + 1.1], [c.lat + 0.7, c.lng - 1.1]]];
+		polygons.forEach(function (poly) {
+			rings.push(L.GeoJSON.coordsToLatLngs(poly[0]));
+		});
+		L.polygon(rings, {interactive: false, stroke: false, fillColor: "#ffffff", fillOpacity: 0.55}).addTo(map);
+	}
+
 	this.load = function () {
 		var bounds = L.latLngBounds([]);
 		var parish = L.latLngBounds([]);
@@ -50,8 +66,10 @@ ra.display.footpaths = function (options, data) {
 		if (data.boundary) {
 			var outline = L.geoJSON(data.boundary, {
 				interactive: false,
-				style: {color: "#4A2160", weight: 2, opacity: 0.8, fill: true, fillOpacity: 0.04, dashArray: "6 4"}
-			}).addTo(map);
+				style: {color: "#4A2160", weight: 2.5, opacity: 0.9, fill: false, dashArray: "6 4"}
+			});
+			fadeOutside(data.boundary, outline.getBounds());
+			outline.addTo(map);
 			bounds.extend(outline.getBounds());
 			parish.extend(outline.getBounds());
 		}
