@@ -45,6 +45,7 @@ ra.display.footpaths = function (options, data) {
 
 	this.load = function () {
 		var bounds = L.latLngBounds([]);
+		var parish = L.latLngBounds([]);
 
 		if (data.boundary) {
 			var outline = L.geoJSON(data.boundary, {
@@ -52,6 +53,7 @@ ra.display.footpaths = function (options, data) {
 				style: {color: "#4A2160", weight: 2, opacity: 0.8, fill: true, fillOpacity: 0.04, dashArray: "6 4"}
 			}).addTo(map);
 			bounds.extend(outline.getBounds());
+			parish.extend(outline.getBounds());
 		}
 
 		var current = L.latLngBounds([]);
@@ -90,19 +92,11 @@ ra.display.footpaths = function (options, data) {
 			current.extend(marker.getLatLng());
 		});
 
-		// Fit to the paths (not the whole boundary), or to this path and its faults on a path page.
-		var target = current.isValid() ? current : (paths.isValid() ? paths : bounds);
-		// Fitting a whole parish leaves the OS map at Landranger scale (1:50,000), where paths are hard to
-		// follow. So never open further out than Explorer scale (1:25,000): zoom 14 on the OS grid, about
-		// the same as zoom 15 on the other maps. The reader can zoom out to see the rest.
+		// Parish page: show the whole parish. Path page: this path and its faults.
+		var target = current.isValid() ? current : (parish.isValid() ? parish : bounds);
 		function fit() {
-			if (!target.isValid()) {
-				return;
-			}
-			map.fitBounds(target, {padding: [16, 16], maxZoom: 16});
-			var closest = map.options.crs && map.options.crs.code === "EPSG:27700" ? 14 : 15;
-			if (map.getZoom() < closest) {
-				map.setView(target.getCenter(), closest);
+			if (target.isValid()) {
+				map.fitBounds(target, {padding: [8, 8], maxZoom: 16});
 			}
 		}
 		fit();
