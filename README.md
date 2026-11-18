@@ -13,7 +13,8 @@ Joomla 5 component for footpath inspections, replacing East Cheshire Ramblers' o
   its latest grade, and the list of paths with grade, date, inspector, fault count and remarks. Filters: name,
   grade, "not inspected for 12 months".
 - **Path**: facts, a map with this path highlighted, its fault positions and the parish's other paths in grey, and
-  the full inspection history: faults, photos (thumbnails, click for the original) and follow-up notes.
+  the full inspection history: faults, photos (thumbnails; click for the original in the ECR template's photo popup, with arrows through all the
+  path's photos, or a new tab under other templates) and follow-up notes.
 - **Admin**: counts per table, and Options (inspector group, photo folder).
 
 Nothing can be added or changed yet. That is stage 2.

@@ -42,7 +42,8 @@ $renderInspection = function (object $inspection) use ($date): void {
 					<?php if ($fault->photos) : ?>
 						<div class="rafp-photos">
 						<?php foreach ($fault->photos as $photo) : ?>
-							<a href="<?php echo $this->photoUrl((int) $photo->id, false); ?>" target="_blank" rel="noopener">
+							<?php // data-ecr-lightbox: the ECR template opens it in its photo popup, with arrows through every photo on the page. Other templates: a new tab. ?>
+							<a href="<?php echo $this->photoUrl((int) $photo->id, false); ?>" target="_blank" rel="noopener" data-ecr-lightbox="rafp-photos" data-caption="<?php echo $this->escape(ucfirst((string) ($fault->type ?: 'Fault')) . ', ' . $date($inspection->inspection_date)); ?>">
 								<img src="<?php echo $this->photoUrl((int) $photo->id, true); ?>" alt="Photo of the <?php echo $this->escape((string) $fault->type); ?> fault" loading="lazy">
 							</a>
 						<?php endforeach; ?>
