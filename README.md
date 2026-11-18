@@ -5,8 +5,10 @@ Joomla 5 component for footpath inspections, replacing East Cheshire Ramblers' o
 
 ## Stage 1: read-only demo (version 0.1.0)
 
-- **Parishes** (menu item type "Footpath parishes"): every parish with its path count, how many were inspected in
-  the last 12 months, never inspected, latest grades and last inspection date. Filter by name.
+- **Parishes** (menu item type "Footpath parishes"): a Map / List switch (remembered in the browser). Map: every
+  parish boundary, named and shaded by the share of its paths inspected in the last 12 months; click one for its
+  figures and a link. List: path count, inspected in the last 12 months, never inspected, latest grades and last
+  inspection date, with a name filter.
 - **Parish**: Ordnance Survey map (opens on Explorer/Landranger) with the parish boundary and each path coloured by
   its latest grade, and the list of paths with grade, date, inspector, fault count and remarks. Filters: name,
   grade, "not inspected for 12 months".

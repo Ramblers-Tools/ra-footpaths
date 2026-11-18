@@ -38,4 +38,21 @@ class ParishesModel extends BaseDatabaseModel
 
 		return $db->setQuery($sql)->loadObjectList();
 	}
+
+	/**
+	 * Parish boundaries as GeoJSON (5 decimal places, about 1 m), keyed by parish id.
+	 *
+	 * @return array<int,string>
+	 */
+	public function getBoundaries(): array
+	{
+		$db = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->select(['id', 'ST_AsGeoJSON(boundary, 5) AS boundary'])
+			->from($db->quoteName('#__ra_footpaths_parishes'))
+			->where('state = 1')
+			->where('boundary IS NOT NULL');
+
+		return $db->setQuery($query)->loadAssocList('id', 'boundary');
+	}
 }

@@ -59,9 +59,47 @@ ra.display.footpaths = function (options, data) {
 		L.polygon(rings, {interactive: false, stroke: false, fillColor: "#ffffff", fillOpacity: 0.55}).addTo(map);
 	}
 
+	function parishPopup(p) {
+		var box = document.createElement("div");
+		box.appendChild(text("strong", p.name));
+		var lines = [
+			p.paths + (p.paths === 1 ? " path" : " paths"),
+			p.recent + " inspected in the last 12 months" + (p.percent === null ? "" : " (" + p.percent + "%)"),
+			p.never + " never inspected",
+			p.last ? "Last inspection " + p.last : "No inspections"
+		];
+		lines.forEach(function (line) {
+			box.appendChild(document.createElement("br"));
+			box.appendChild(text("span", line));
+		});
+		box.appendChild(document.createElement("br"));
+		var a = text("a", "Open " + p.name);
+		a.href = p.url;
+		box.appendChild(a);
+		return box;
+	}
+
+	// Parishes page: every parish, shaded, labelled and clickable.
+	function drawParishes(list, bounds) {
+		// Names on the map when there's room; on a phone they would pile up, so show them on touch instead.
+		var labels = window.innerWidth >= 768;
+		list.forEach(function (p) {
+			var base = {color: "#4A2160", weight: 2, opacity: 0.9, fillColor: p.colour, fillOpacity: 0.25};
+			var layer = L.geoJSON(p.boundary, {style: base});
+			layer.bindPopup(parishPopup(p));
+			layer.bindTooltip(p.name, labels ? {permanent: true, direction: "center", className: "rafp-parish-label"} : {sticky: true});
+			layer.on("mouseover", function () { layer.setStyle({weight: 3.5, fillOpacity: 0.5}); });
+			layer.on("mouseout", function () { layer.setStyle(base); });
+			layer.addTo(map);
+			bounds.extend(layer.getBounds());
+		});
+	}
+
 	this.load = function () {
 		var bounds = L.latLngBounds([]);
 		var parish = L.latLngBounds([]);
+
+		drawParishes(data.parishes || [], bounds);
 
 		if (data.boundary) {
 			var outline = L.geoJSON(data.boundary, {
@@ -126,6 +164,12 @@ ra.display.footpaths = function (options, data) {
 				autoSwitch = false;
 				window.setTimeout(fit, 50);
 			}
+		});
+
+		// The parishes page can start on its list, with the map hidden; size and fit it when it is shown.
+		document.addEventListener("rafp-map-shown", function () {
+			map.invalidateSize();
+			fit();
 		});
 
 		pickOsLayer();

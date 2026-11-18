@@ -47,9 +47,53 @@
 		});
 	}
 
-	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", init);
-	} else {
+	// Map / List switch on the parishes page. The choice is remembered in this browser.
+	function initSwitch() {
+		var buttons = document.querySelectorAll("[data-rafp-show]");
+		if (!buttons.length) {
+			return;
+		}
+
+		function show(which, remember) {
+			buttons.forEach(function (b) {
+				var on = b.dataset.rafpShow === which;
+				b.setAttribute("aria-pressed", on ? "true" : "false");
+				b.classList.toggle("btn-primary", on);
+				b.classList.toggle("btn-outline-secondary", !on);
+			});
+			document.querySelectorAll("[data-rafp-panel]").forEach(function (p) {
+				p.hidden = p.dataset.rafpPanel !== which;
+			});
+			if (remember) {
+				try {
+					window.localStorage.setItem("rafp-parishes-view", which);
+				} catch (e) {}
+			}
+			if (which === "map") {
+				// A map drawn while hidden has no size: tell it to measure itself and refit.
+				document.dispatchEvent(new CustomEvent("rafp-map-shown"));
+			}
+		}
+
+		buttons.forEach(function (b) {
+			b.addEventListener("click", function () { show(b.dataset.rafpShow, true); });
+		});
+
+		var start = "map";
+		try {
+			start = window.localStorage.getItem("rafp-parishes-view") || "map";
+		} catch (e) {}
+		show(start === "list" ? "list" : "map", false);
+	}
+
+	function start() {
+		initSwitch();
 		init();
+	}
+
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", start);
+	} else {
+		start();
 	}
 })();

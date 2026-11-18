@@ -37,6 +37,13 @@
 
 .rafp-map { margin: 0 0 .5rem; }
 
+.rafp-switch { display: inline-flex; gap: .25rem; margin: 0 0 .75rem; }
+.rafp-hint { font-size: .9rem; margin: 0 0 .25rem; }
+.rafp-swatch { display: inline-block; width: 1rem; height: 1rem; border-radius: 3px; border: 1px solid #4A2160; opacity: .7; }
+.leaflet-tooltip.rafp-parish-label { background: rgba(255,255,255,.9); border: 1px solid #4A2160; border-radius: 4px; box-shadow: none;
+	padding: 0 4px; font-weight: 700; font-size: 11px; line-height: 1.5; color: #2b1238; white-space: nowrap; }
+.leaflet-tooltip.rafp-parish-label::before { display: none; }
+
 .rafp-facts { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1rem; margin: 0 0 1rem; }
 .rafp-facts dt { font-weight: 600; }
 .rafp-facts dd { margin: 0; }

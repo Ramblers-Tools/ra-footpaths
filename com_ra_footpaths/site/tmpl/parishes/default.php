@@ -30,6 +30,24 @@ foreach ($this->items as $row) {
 		<li><strong><?php echo number_format($totals['cd']); ?></strong><span>graded C or D last time</span></li>
 	</ul>
 
+	<?php if ($this->mapHtml !== '') : ?>
+	<div class="rafp-switch" role="group" aria-label="Show parishes as">
+		<button type="button" class="btn btn-sm" data-rafp-show="map" aria-pressed="true">Map</button>
+		<button type="button" class="btn btn-sm" data-rafp-show="list" aria-pressed="false">List</button>
+	</div>
+
+	<section data-rafp-panel="map">
+		<p class="rafp-hint">Click a parish to see its figures and open it. Shaded by the share of its paths inspected in the last 12 months:</p>
+		<ul class="rafp-legend">
+			<?php foreach ($this::BANDS as [, $colour, $label]) : ?>
+				<li><span class="rafp-swatch" style="background:<?php echo $colour; ?>"></span><?php echo $label; ?></li>
+			<?php endforeach; ?>
+		</ul>
+		<?php echo $this->mapHtml; ?>
+	</section>
+	<?php endif; ?>
+
+	<section data-rafp-panel="list">
 	<div class="rafp-filters">
 		<label>Find a parish <input type="search" name="search" class="form-control" data-rafp-for="rafp-parish-table" autocomplete="off"></label>
 		<span class="rafp-count" data-rafp-count="rafp-parish-table" aria-live="polite"></span>
@@ -70,4 +88,5 @@ foreach ($this->items as $row) {
 		<?php endforeach; ?>
 		</tbody>
 	</table>
+	</section>
 </div>
