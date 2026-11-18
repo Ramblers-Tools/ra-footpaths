@@ -32,10 +32,15 @@ class HtmlView extends BaseHtmlView
 
 	protected string $mapHtml = '';
 
+	/** @var array<int,object> The signed-in inspector's own parishes (empty for everyone else). */
+	protected array $mine = [];
+
 	public function display($tpl = null): void
 	{
 		$model = $this->getModel();
 		$this->items = $model->getItems();
+		$myIds = $model->getMyParishIds((int) $this->getCurrentUser()->id);
+		$this->mine = array_values(array_filter($this->items, static fn ($row) => \in_array((int) $row->id, $myIds, true)));
 
 		$wa = $this->getDocument()->getWebAssetManager();
 		$wa->getRegistry()->addExtensionRegistryFile('com_ra_footpaths');
@@ -67,6 +72,17 @@ class HtmlView extends BaseHtmlView
 		return '#757575';
 	}
 
+	public function isMine(object $row): bool
+	{
+		foreach ($this->mine as $m) {
+			if ((int) $m->id === (int) $row->id) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	/** @param array<int,string> $boundaries */
 	private function mapData(array $boundaries): array
 	{
@@ -88,6 +104,7 @@ class HtmlView extends BaseHtmlView
 				'never' => (int) $row->never,
 				'last' => $row->last_date ? HTMLHelper::_('date', $row->last_date, 'j M Y') : '',
 				'boundary' => json_decode($boundaries[$row->id]),
+				'mine' => $this->isMine($row),
 			];
 		}
 

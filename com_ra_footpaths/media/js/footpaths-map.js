@@ -92,29 +92,41 @@ ra.display.footpaths = function (options, data) {
 		// Names on the map when there's room; on a phone they would pile up, so show them on touch instead.
 		var labels = window.innerWidth >= 768;
 		var area = L.latLngBounds([]);
+		var mine = L.latLngBounds([]);
 		var layers = list.map(function (p) {
-			var base = {color: "#4A2160", weight: 2, opacity: 0.9, fillColor: p.colour, fillOpacity: 0.25};
+			// The signed-in inspector's own parishes get a heavy outline (and the map opens on them).
+			var base = p.mine
+				? {color: "#4A2160", weight: 5, opacity: 1, fillColor: p.colour, fillOpacity: 0.35}
+				: {color: "#4A2160", weight: 2, opacity: 0.9, fillColor: p.colour, fillOpacity: 0.25};
 			var layer = L.geoJSON(p.boundary, {style: base});
 			layer.bindPopup(parishPopup(p));
-			layer.on("mouseover", function () { layer.setStyle({weight: 3.5, fillOpacity: 0.5}); });
+			layer.on("mouseover", function () { layer.setStyle({weight: p.mine ? 6 : 3.5, fillOpacity: 0.5}); });
 			layer.on("mouseout", function () { layer.setStyle(base); });
 			area.extend(layer.getBounds());
-			return {layer: layer, name: p.name};
+			if (p.mine) {
+				mine.extend(layer.getBounds());
+			}
+			return {layer: layer, name: p.name, mine: p.mine};
 		});
 		// Fade everything outside the club's parishes first, so the parishes sit on top of it.
 		fadeOutside(list.map(function (p) { return p.boundary; }), area);
 		layers.forEach(function (l) {
 			l.layer.addTo(map);
-			l.layer.bindTooltip(l.name, labels ? {permanent: true, direction: "center", className: "rafp-parish-label"} : {sticky: true});
+			var cls = "rafp-parish-label" + (l.mine ? " rafp-parish-label-mine" : "");
+			l.layer.bindTooltip(l.name, labels || l.mine ? {permanent: true, direction: "center", className: cls} : {sticky: true});
+			if (l.mine) {
+				l.layer.bringToFront();
+			}
 		});
 		bounds.extend(area);
+		return mine;
 	}
 
 	this.load = function () {
 		var bounds = L.latLngBounds([]);
 		var parish = L.latLngBounds([]);
 
-		drawParishes(data.parishes || [], bounds);
+		var mine = drawParishes(data.parishes || [], bounds);
 
 		if (data.boundary) {
 			var outline = L.geoJSON(data.boundary, {
@@ -163,8 +175,9 @@ ra.display.footpaths = function (options, data) {
 			current.extend(marker.getLatLng());
 		});
 
-		// Parish page: show the whole parish. Path page: this path and its faults.
-		var target = current.isValid() ? current : (parish.isValid() ? parish : bounds);
+		// Parish page: show the whole parish. Path page: this path and its faults. Parishes page: the
+		// inspector's own parishes, or all of them.
+		var target = current.isValid() ? current : (parish.isValid() ? parish : (mine.isValid() ? mine.pad(0.3) : bounds));
 		function fit() {
 			if (target.isValid()) {
 				map.fitBounds(target, {padding: [8, 8], maxZoom: 16});

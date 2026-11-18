@@ -137,6 +137,10 @@ $say(($dryRun ? 'DRY RUN: ' : '') . 'Importing from ' . $legacyDb . ' into ' . $
 $db->beginTransaction();
 
 try {
+	// Website logins linked to inspectors are set on the site, not in the old system: keep them across a re-import.
+	$logins = $db->query('SELECT i.legacy_id, u.user_id FROM ' . $t('inspector_users') . ' u JOIN ' . $t('inspectors') . ' i ON i.id = u.inspector_id WHERE i.legacy_id IS NOT NULL')->fetchAll(PDO::FETCH_ASSOC);
+	$db->exec('DELETE FROM ' . $t('inspector_users'));
+
 	foreach ($tables as $name) {
 		$db->exec('DELETE FROM ' . $t($name));
 	}
@@ -239,6 +243,15 @@ try {
 	$insert($t('inspectors'), $rows);
 	$inspectorIds = $ids('inspectors');
 	$report['inspectors'] = [(int) $legacy->query('SELECT COUNT(*) FROM inspectors')->fetchColumn(), count($rows)];
+
+	$rows = [];
+	foreach ($logins as $l) {
+		if (isset($inspectorIds[(int) $l['legacy_id']])) {
+			$rows[] = ['inspector_id' => $inspectorIds[(int) $l['legacy_id']], 'user_id' => (int) $l['user_id']];
+		}
+	}
+	$insert($t('inspector_users'), $rows);
+	$report['website logins kept'] = [count($logins), count($rows)];
 
 	// Parish allocations.
 	$rows = [];

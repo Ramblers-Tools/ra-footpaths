@@ -40,6 +40,28 @@ class ParishesModel extends BaseDatabaseModel
 	}
 
 	/**
+	 * Parishes covered by the inspector(s) linked to this website login.
+	 *
+	 * @return int[]
+	 */
+	public function getMyParishIds(int $userId): array
+	{
+		if ($userId <= 0) {
+			return [];
+		}
+
+		$db = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->select('DISTINCT ip.parish_id')
+			->from($db->quoteName('#__ra_footpaths_inspector_users', 'iu'))
+			->join('INNER', $db->quoteName('#__ra_footpaths_inspector_parishes', 'ip') . ' ON ip.inspector_id = iu.inspector_id')
+			->where('iu.user_id = :uid')
+			->bind(':uid', $userId, \Joomla\Database\ParameterType::INTEGER);
+
+		return array_map('intval', $db->setQuery($query)->loadColumn());
+	}
+
+	/**
 	 * Parish boundaries as GeoJSON (5 decimal places, about 1 m), keyed by parish id.
 	 *
 	 * @return array<int,string>

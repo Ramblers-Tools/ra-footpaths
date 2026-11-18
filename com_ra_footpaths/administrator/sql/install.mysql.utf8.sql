@@ -44,12 +44,18 @@ CREATE TABLE IF NOT EXISTS `#__ra_footpaths_paths` (
 
 CREATE TABLE IF NOT EXISTS `#__ra_footpaths_inspectors` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int DEFAULT NULL,
   `name` varchar(100) NOT NULL DEFAULT '',
   `active` tinyint NOT NULL DEFAULT 0,
   `legacy_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_legacy` (`legacy_id`),
+  UNIQUE KEY `idx_legacy` (`legacy_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Website logins for an inspector (some people have more than one, for example a personal and a club address).
+CREATE TABLE IF NOT EXISTS `#__ra_footpaths_inspector_users` (
+  `inspector_id` int unsigned NOT NULL,
+  `user_id` int NOT NULL,
+  PRIMARY KEY (`inspector_id`, `user_id`),
   KEY `idx_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

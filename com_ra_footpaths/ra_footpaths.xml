@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     18/11/26 RH version 0.1.0 - stage 1 read-only demo: legacy import, parish list, parish map, path history
+    18/11/26 RH version 0.2.0 - parishes map / list, "My parishes" (inspector_users table), photo popup
 -->
 <extension type="component" version="4.0" method="upgrade">
     <name>COM_RA_FOOTPATHS</name>
@@ -10,7 +11,7 @@
     <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
     <author>Richard Higham</author>
     <authorUrl>https://ramblerseastcheshire.org.uk</authorUrl>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
     <description>COM_RA_FOOTPATHS_XML_DESCRIPTION</description>
     <namespace path="src">Ramblers\Component\Ra_footpaths</namespace>
 
@@ -19,6 +20,11 @@
             <file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
         </sql>
     </install>
+    <update>
+        <schemas>
+            <schemapath type="mysql">sql/updates/mysql</schemapath>
+        </schemas>
+    </update>
     <uninstall>
         <sql>
             <file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>

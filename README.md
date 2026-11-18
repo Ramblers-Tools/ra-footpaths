@@ -3,12 +3,13 @@
 Joomla 5 component for footpath inspections, replacing East Cheshire Ramblers' old Footpath Inspections Database
 (plain PHP, 2002 to 2026). Plan and decisions: `~/personal-projects/briefs/ra-footpaths/brief.md` (local only).
 
-## Stage 1: read-only demo (version 0.1.0)
+## Stage 1: read-only demo (version 0.2.0)
 
 - **Parishes** (menu item type "Footpath parishes"): a Map / List switch (remembered in the browser). Map: every
   parish boundary, named and shaded by the share of its paths inspected in the last 12 months; click one for its
   figures and a link. List: path count, inspected in the last 12 months, never inspected, latest grades and last
-  inspection date, with a name filter.
+  inspection date, with a name filter. An inspector sees "Your parish(es)" at the top (figures and how many paths are
+  due), their parishes marked "yours" in the list and outlined on the map, which opens on them.
 - **Parish**: Ordnance Survey map (opens on Explorer/Landranger) with the parish boundary and each path coloured by
   its latest grade, and the list of paths with grade, date, inspector, fault count and remarks. Filters: name,
   grade, "not inspected for 12 months".
@@ -59,6 +60,10 @@ they get the same layers as walk maps and the club OS key that RA Tweaks swaps i
 
 Inspectors come across with name and active flag only (no email, phone or membership number).
 
+Website logins are linked to inspectors in `#__ra_footpaths_inspector_users` (one inspector can have several logins,
+for example a personal and a club address). There is no screen for this yet (stage 2), so add rows by SQL. The
+importer keeps these links across a `--replace` re-import, matching on the old inspector id.
+
 Result on the dev site (18 Nov 2026 export):
 
 | | Old system | Imported |
@@ -76,7 +81,8 @@ Path 1671 points at parish 3, which does not exist, so it shows in no parish.
 
 ## Dev
 
-- `tools/devsync.sh [site root]` copies the component into a local site without the installer (default: the ECR dev copy).
-  Use the zip and the installer when the manifest or SQL changes: `cd com_ra_footpaths && zip -r ../com_ra_footpaths.zip .`
+- `tools/devsync.sh [site root]` copies the component into a local site without the installer (default: the ECR dev copy),
+  and resets Joomla's media version so browsers fetch the new CSS and JS. Use the zip and the installer when the
+  manifest or SQL changes (database changes go in `administrator/sql/updates/mysql/<version>.sql`): `cd com_ra_footpaths && zip -r ../com_ra_footpaths.zip .`
 - `tools/dev-setup.php <parent menu item id> <user ids>` (dev only): creates the "Footpath inspectors" group and
   access level, adds the users, sets the component option and adds an "Inspection Records" menu item.
