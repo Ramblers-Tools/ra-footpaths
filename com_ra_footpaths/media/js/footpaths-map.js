@@ -15,9 +15,74 @@ ra.display.footpaths = function (options, data) {
 	"use strict";
 
 	var lmap = new ra.leafletmap(document.getElementById(options.divId), options);
+	data = data || {};
+
+	// The library's Help tab loads a page from the Ramblers mapping help site, which has nothing for these
+	// maps (it shows "you should not have arrived at this page"). Show our own help instead.
+	lmap._displayHelp = function (tag) {
+		tag.appendChild(helpContent());
+	};
 	lmap.display();
 	var map = lmap.map();
-	data = data || {};
+
+	var grades = [["#2e7d32", "A", "good"], ["#f9a825", "B", "minor problems"], ["#ef6c00", "C", "significant problems"],
+		["#c62828", "D", "serious problem"], ["#757575", "N", "never inspected"]];
+
+	function helpContent() {
+		var box = document.createElement("div");
+		box.className = "rafp-map-help";
+		function heading(t) {
+			box.appendChild(text("h3", t));
+		}
+		function list(items) {
+			var ul = document.createElement("ul");
+			items.forEach(function (i) {
+				ul.appendChild(typeof i === "string" ? text("li", i) : i);
+			});
+			box.appendChild(ul);
+		}
+		function swatch(colour, label) {
+			var li = document.createElement("li");
+			var s = document.createElement("span");
+			s.className = "rafp-swatch";
+			s.style.background = colour;
+			li.appendChild(s);
+			li.appendChild(document.createTextNode(" " + label));
+			return li;
+		}
+
+		heading("Using the map");
+		list([
+			"Drag to move around. Zoom with the mouse wheel, by double-clicking, or with two fingers on a phone.",
+			"The layers button (top right of the map) changes the map: OS Explorer/Landranger, street maps or aerial photos.",
+			"Settings (next to Help) has the map's own options. Map takes you back to the map."
+		]);
+
+		if (data.parishes) {
+			heading("This map");
+			list([
+				"Each shape is one of our parishes. Click one to see its figures and a link to open it.",
+				"Parishes you inspect have a thick outline and a dark name label, and the map opens on them.",
+				"The map outside our parishes is faded."
+			]);
+			heading("Shading: paths inspected in the last 12 months");
+			list([swatch("#2e7d32", "75% or more"), swatch("#f9a825", "50 to 74%"), swatch("#ef6c00", "25 to 49%"), swatch("#c62828", "under 25%")]);
+		} else {
+			heading("This map");
+			var lines = (data.faults || []).length || (data.paths || []).some(function (p) { return p.current; })
+				? ["The path you are looking at is drawn thicker, with a white edge.",
+					"Dots with a white ring mark where faults were recorded at the latest inspection, coloured by their grade.",
+					"Click any path to see its last inspection and a link to its history."]
+				: ["Each line is a path, coloured by the grade at its latest inspection.",
+					"Click a path to see its last inspection and a link to its history.",
+					"Hover over a path (or touch it on a phone) to see its name."];
+			lines.push("The dashed line is the parish boundary; the map outside the parish is faded.");
+			list(lines);
+			heading("Path colours (latest grade)");
+			list(grades.map(function (g) { return swatch(g[0], g[1] + " " + g[2]); }));
+		}
+		return box;
+	}
 
 	function text(tag, value, cls) {
 		var el = document.createElement(tag);

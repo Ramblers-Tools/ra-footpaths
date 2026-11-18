@@ -76,3 +76,10 @@
 	.rafp-table .rafp-hide-sm { display: none; }
 	.rafp-photos img { width: 46vw; height: 34vw; }
 }
+
+/* Our own Help tab content in the library map (replaces the library's iframe). */
+.rafp-map-help { padding: 1rem 1.25rem; max-width: 46rem; font-size: .95rem; }
+.rafp-map-help h3 { font-size: 1.05rem; margin: 1rem 0 .4rem; }
+.rafp-map-help h3:first-child { margin-top: 0; }
+.rafp-map-help ul { margin: 0 0 .5rem; padding-left: 1.2rem; }
+.rafp-map-help li { margin: 0 0 .25rem; }
