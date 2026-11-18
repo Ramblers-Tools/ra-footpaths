@@ -83,3 +83,39 @@
 .rafp-map-help h3:first-child { margin-top: 0; }
 .rafp-map-help ul { margin: 0 0 .5rem; padding-left: 1.2rem; }
 .rafp-map-help li { margin: 0 0 .25rem; }
+
+/* Record an inspection (trial form). */
+.rafp-demo-note { background: #fff4d6; border: 1px solid #f9a825; border-radius: 8px; padding: .75rem 1rem; margin: 0 0 1rem; }
+.rafp-last { color: #444; }
+.rafp-box { border: 1px solid #e3ded3; border-radius: 8px; padding: .75rem 1rem 1rem; margin: 0 0 1rem; }
+.rafp-box > legend, .rafp-fault-entry > legend { float: none; width: auto; font-size: 1.1rem; font-weight: 700; padding: 0 .35rem; margin: 0; }
+.rafp-row { margin: 0 0 .9rem; }
+.rafp-row > label, .rafp-label { display: block; font-weight: 600; margin: 0 0 .25rem; }
+.rafp-optional { font-weight: 400; color: #666; }
+.rafp-help { font-size: .9rem; color: #555; margin: .25rem 0 .5rem; }
+.rafp-grades { display: grid; gap: .35rem; }
+.rafp-grades-inline { grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }
+.rafp-grade-pick { display: flex; align-items: center; gap: .5rem; border: 1px solid #e3ded3; border-radius: 6px; padding: .5rem .65rem; cursor: pointer; min-height: 44px; }
+.rafp-grade-pick:has(input:checked) { border-color: #4A2160; background: #f4eff7; }
+.rafp-grade-pick input { margin: 0; }
+.rafp-fault-entry { border: 1px solid #cfc6b5; border-left: 4px solid #4A2160; border-radius: 8px; padding: .5rem .9rem .25rem; margin: 0 0 .9rem; }
+.rafp-fault-entry > legend { display: flex; align-items: center; gap: .5rem; }
+.rafp-remove { color: #c62828; }
+.rafp-where { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.rafp-where .rafp-gridref { flex: 1 1 12rem; width: auto; }
+.rafp-none { color: #555; font-style: italic; }
+.rafp-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.rafp-submit { margin: 1rem 0 2rem; }
+.rafp-pick-map { margin: 0 0 1rem; scroll-margin-top: 1rem; }
+.rafp-pick-hint { background: #4A2160; color: #fff; border-radius: 6px; padding: .5rem .75rem; margin: 0 0 .5rem; }
+.rafp-pick-hint .btn-link { color: #fff; }
+.rafp-picking .leaflet-container { cursor: crosshair; outline: 3px solid #4A2160; }
+.leaflet-marker-icon.rafp-pin { box-sizing: border-box; background: #4A2160; color: #fff; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,.5);
+	display: flex !important; align-items: center; justify-content: center; }
+.leaflet-marker-icon.rafp-pin span { color: #fff !important; font: 700 14px/1 system-ui, sans-serif; text-shadow: none; }
+.rafp-demo-dialog { max-width: 36rem; width: calc(100% - 2rem); border: 0; border-radius: 10px; padding: 1.25rem 1.5rem; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+.rafp-demo-dialog::backdrop { background: rgba(0,0,0,.5); }
+.rafp-demo-dialog h2 { font-size: 1.3rem; margin: 0 0 .5rem; color: #c62828; }
+.rafp-summary-faults { padding-left: 1.2rem; }
+.rafp-summary-faults li { margin: 0 0 .35rem; }
+.rafp-record { margin: 0 0 1rem; }

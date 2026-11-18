@@ -86,6 +86,9 @@ $renderInspection = function (object $inspection) use ($date): void {
 		<dt>Inspections</dt><dd><?php echo count($this->inspections); ?></dd>
 	</dl>
 
+	<p class="rafp-record"><a class="btn btn-primary" href="<?php echo RouteHelper::url('view=report&id=' . (int) $path->id); ?>">Record an inspection</a>
+		<span class="small text-muted">Trial: nothing is saved yet.</span></p>
+
 	<?php echo $this->mapHtml; ?>
 	<p class="small text-muted">This path is in its grade colour; the parish's other paths are grey. Dots are fault positions.</p>
 

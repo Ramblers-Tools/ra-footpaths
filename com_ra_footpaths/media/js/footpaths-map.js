@@ -220,6 +220,10 @@ ra.display.footpaths = function (options, data) {
 			});
 			layer.bindPopup(pathPopup(p));
 			layer.bindTooltip(p.label, {sticky: true});
+			if (data.pick) {
+				// A click on a path doesn't reach the map's own click handler, and faults are usually on the path.
+				layer.on("click", picked);
+			}
 			layer.addTo(map);
 			bounds.extend(layer.getBounds());
 			paths.extend(layer.getBounds());
@@ -265,8 +269,42 @@ ra.display.footpaths = function (options, data) {
 			fit();
 		});
 
+		if (data.pick) {
+			pickable();
+		}
+
 		pickOsLayer();
 	};
+
+	function picked(e) {
+		document.dispatchEvent(new CustomEvent("rafp-map-pick", {detail: {lat: e.latlng.lat, lng: e.latlng.lng}}));
+	}
+
+	// Record-an-inspection form: a tap on the map tells the form where a fault is, and the form sends back the
+	// numbered dots to draw (see footpaths-report.js).
+	function pickable() {
+		var dots = L.layerGroup().addTo(map);
+		map.on("click", picked);
+		map.on("popupopen", function () {
+			// While placing a fault, a tap on a path places the fault rather than opening the path's details.
+			if (document.querySelector(".rafp-picking")) {
+				map.closePopup();
+			}
+		});
+		document.addEventListener("rafp-markers", function (ev) {
+			dots.clearLayers();
+			(ev.detail.markers || []).forEach(function (m) {
+				L.marker([m.lat, m.lng], {
+					interactive: false,
+					icon: L.divIcon({className: "rafp-pin", html: "<span>" + Number(m.n) + "</span>", iconSize: [28, 28], iconAnchor: [14, 14]})
+				}).addTo(dots);
+			});
+			var f = ev.detail.focus;
+			if (f && !map.getBounds().contains([f.lat, f.lng])) {
+				map.panTo([f.lat, f.lng]);
+			}
+		});
+	}
 
 	// Set while we switch the layer ourselves, so only that switch re-fits the view (not the reader's own).
 	var autoSwitch = false;
