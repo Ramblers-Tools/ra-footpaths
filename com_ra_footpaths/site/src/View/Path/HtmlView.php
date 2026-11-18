@@ -103,6 +103,8 @@ class HtmlView extends BaseHtmlView
 					'lng' => (float) $fault->lng,
 					'label' => MapHelper::plain(ucfirst((string) $fault->type) . ', ' . $date),
 					'colour' => FootpathsHelper::gradeColour($fault->grade ?: $inspection->grade),
+					// The inspection's report further down this page.
+					'report' => 'rafp-inspection-' . (int) $inspection->id,
 				];
 			}
 

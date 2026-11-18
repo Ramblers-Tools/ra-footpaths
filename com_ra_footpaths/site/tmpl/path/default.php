@@ -18,7 +18,7 @@ $date = static fn (?string $d): string => $d ? HTMLHelper::_('date', $d, 'j M Y'
 
 $renderInspection = function (object $inspection) use ($date): void {
 	?>
-	<article class="rafp-inspection">
+	<article class="rafp-inspection" id="rafp-inspection-<?php echo (int) $inspection->id; ?>" tabindex="-1">
 		<header>
 			<?php echo FootpathsHelper::gradeChip($inspection->grade); ?>
 			<h3><?php echo $date($inspection->inspection_date); ?></h3>
@@ -90,7 +90,7 @@ $renderInspection = function (object $inspection) use ($date): void {
 		<span class="small text-muted">Trial: nothing is saved yet.</span></p>
 
 	<?php echo $this->mapHtml; ?>
-	<p class="small text-muted">This path is in its grade colour; the parish's other paths are grey. Dots are fault positions.</p>
+	<p class="small text-muted">This path is in its grade colour; the parish's other paths are grey. Dots are fault positions: click one to open its report.</p>
 
 	<h2>Inspection history</h2>
 	<?php if (!$this->inspections) : ?>

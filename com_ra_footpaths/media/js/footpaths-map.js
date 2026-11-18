@@ -71,7 +71,7 @@ ra.display.footpaths = function (options, data) {
 			heading("This map");
 			var lines = (data.faults || []).length || (data.paths || []).some(function (p) { return p.current; })
 				? ["The path you are looking at is drawn thicker, with a white edge.",
-					"Dots with a white ring mark where faults were recorded at the latest inspection, coloured by their grade.",
+					"Dots with a white ring mark where faults were recorded, coloured by their grade. Click a dot to see what it was and open its report.",
 					"Click any path to see its last inspection and a link to its history."]
 				: ["Each line is a path, coloured by the grade at its latest inspection.",
 					"Click a path to see its last inspection and a link to its history.",
@@ -105,6 +105,38 @@ ra.display.footpaths = function (options, data) {
 			a.href = p.url;
 			box.appendChild(a);
 		}
+		return box;
+	}
+
+	// A fault dot's popup: what it is, and a link down to its inspection's report on the same page.
+	function faultPopup(f) {
+		var box = document.createElement("div");
+		box.appendChild(text("strong", f.label));
+		box.appendChild(document.createElement("br"));
+		var a = text("a", "Open this report");
+		a.href = "#" + f.report;
+		a.addEventListener("click", function (e) {
+			var target = document.getElementById(f.report);
+			if (!target) {
+				return;
+			}
+			e.preventDefault();
+			map.closePopup();
+			// Older reports sit in a closed "Show older inspections" box: open it first.
+			var details = target.closest("details");
+			if (details) {
+				details.open = true;
+			}
+			target.scrollIntoView({behavior: "smooth", block: "start"});
+			target.focus({preventScroll: true});
+			target.classList.remove("rafp-flash");
+			void target.offsetWidth;
+			target.classList.add("rafp-flash");
+			if (window.history && window.history.replaceState) {
+				window.history.replaceState(null, "", "#" + f.report);
+			}
+		});
+		box.appendChild(a);
 		return box;
 	}
 
@@ -240,6 +272,9 @@ ra.display.footpaths = function (options, data) {
 				radius: 7, color: "#ffffff", weight: 2, fillColor: f.colour, fillOpacity: 1
 			});
 			marker.bindTooltip(f.label);
+			if (f.report) {
+				marker.bindPopup(faultPopup(f));
+			}
 			marker.addTo(map);
 			current.extend(marker.getLatLng());
 		});

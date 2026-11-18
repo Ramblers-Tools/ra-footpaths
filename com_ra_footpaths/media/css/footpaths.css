@@ -119,3 +119,9 @@
 .rafp-summary-faults { padding-left: 1.2rem; }
 .rafp-summary-faults li { margin: 0 0 .35rem; }
 .rafp-record { margin: 0 0 1rem; }
+
+/* A report opened from its fault dot on the map. */
+.rafp-inspection { scroll-margin-top: 1rem; }
+.rafp-inspection:focus { outline: none; }
+.rafp-flash { animation: rafp-flash 2.5s ease-out; }
+@keyframes rafp-flash { 0%, 30% { background: #f4eff7; border-color: #4A2160; box-shadow: 0 0 0 3px #4A2160; } 100% { background: transparent; } }
