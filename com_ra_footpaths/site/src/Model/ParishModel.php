@@ -35,7 +35,7 @@ class ParishModel extends BaseDatabaseModel
 		$db = $this->getDatabase();
 		$latest = LatestInspection::subquery($db, 'p.parish_id = ' . (int) $parishId);
 
-		$sql = 'SELECT p.id, p.type, p.number, p.length_m, p.start_gridref, p.end_gridref,'
+		$sql = 'SELECT p.id, p.type, p.number, p.sort_key, p.length_m, p.start_gridref, p.end_gridref,'
 			. ' ST_AsGeoJSON(p.route) AS route,'
 			. ' lp.inspection_id, lp.inspection_date, lp.grade, lp.remarks, ins.name AS inspector,'
 			. ' (SELECT COUNT(*) FROM ' . $db->quoteName('#__ra_footpaths_faults', 'f') . ' WHERE f.inspection_id = lp.inspection_id) AS faults,'

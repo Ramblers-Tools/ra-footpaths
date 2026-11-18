@@ -25,6 +25,14 @@ class Dispatcher extends ComponentDispatcher
 	{
 		parent::checkAccess();
 
+		// The app's endpoints (task=app.*) sign in with the app's token instead, never the session, and
+		// make the same inspector check themselves (AppController). They must not redirect to a login page.
+		if (str_starts_with(strtolower($this->input->getCmd('task', '')), 'app.')) {
+			$this->app->allowCache(false);
+
+			return;
+		}
+
 		$user = $this->app->getIdentity();
 
 		if (FootpathsHelper::canView($user)) {

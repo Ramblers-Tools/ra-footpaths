@@ -3,7 +3,7 @@
 Joomla 5 component for footpath inspections, replacing East Cheshire Ramblers' old Footpath Inspections Database
 (plain PHP, 2002 to 2026). Plan and decisions: `~/personal-projects/briefs/ra-footpaths/brief.md` (local only).
 
-## Stage 1: read-only demo (version 0.2.0)
+## Stage 1: read-only demo (version 0.4.0)
 
 - **Parishes** (menu item type "Footpath parishes"): a Map / List switch (remembered in the browser). Map: every
   parish boundary, named and shaded by the share of its paths inspected in the last 12 months; click one for its
@@ -49,6 +49,34 @@ on all 1,163), but new uploads may, so stage 2 must strip it on upload.
 
 Drawn with the Ramblers library map (`RLeafletMap`, command `ra.display.footpaths` in `media/js/footpaths-map.js`), so
 they get the same layers as walk maps and the club OS key that RA Tweaks swaps in.
+
+### Endpoints for the Ramblers Tools app (0.4.0)
+
+Read-only JSON for the app, at `index.php?option=com_ra_footpaths&format=json&task=app.<name>`:
+
+| Task | Answer |
+|---|---|
+| `app.me` | `inspector` (true/false), `inspectors` (`[{id, name}]` linked to the user), `my_parishes` (ids), `server_time` |
+| `app.parishes` | `totals`, and every parish with its figures, `mine`, `changed` and `centre` (`[lng, lat]`) |
+| `app.boundaries` | every parish outline as a GeoJSON FeatureCollection, simplified to about 10 m. ETag / 304 |
+| `app.parish&id=N` | one parish: figures, `changed`, full outline, every path with its latest inspection and whole history (faults with `position` `[lng, lat]`, photo ids, follow-up events). ETag / 304 |
+| `app.photo&id=N&size=thumb\|full` | the JPEG (thumb is the default) |
+
+- **Sign-in:** the app's token from com_ra_tools (**4.4.0 or later**, which adds token scopes), sent as
+  `Authorization: Bearer <token>` or `X-Ramblers-Token: <token>`. Never the query string. The Joomla session is
+  ignored. The token needs the `footpaths` scope. Tokens issued before 4.4.0 have only `bookings`, so the user signs
+  in again.
+- **Who:** the same rule as the website (inspector group or Super User), checked on every request.
+- **Errors:** `401 {"error":"invalid_token"}` (none, unknown, expired, revoked), `403 insufficient_scope`,
+  `403 forbidden` (not an inspector; `app.me` answers 200 with `"inspector": false` instead), `404 not_found`,
+  `405` for anything but GET, `503 unavailable` if com_ra_tools is too old.
+- **Headers:** `Cache-Control: no-store` on everything, no CORS.
+- **`changed`** is the latest inspection or photo added to the parish. Stage 2 must also stamp edits to paths,
+  boundaries and fault events.
+- Only published parishes and paths, and the photos on them, are returned.
+
+Code: `site/src/Controller/AppController.php`, `site/src/Model/AppModel.php`, `site/src/Helper/Geo.php`. The app's
+side of the contract is in the app repo's footpaths handover.
 
 ## Importing the old database
 

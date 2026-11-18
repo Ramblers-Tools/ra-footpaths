@@ -3,6 +3,7 @@
     18/11/26 RH version 0.1.0 - stage 1 read-only demo: legacy import, parish list, parish map, path history
     18/11/26 RH version 0.2.0 - parishes map / list, "My parishes" (inspector_users table), photo popup
     18/11/26 RH version 0.3.0 - record an inspection: trial form (nothing saved; popup shows what would be)
+    18/11/26 RH version 0.4.0 - read-only JSON endpoints for the Ramblers Tools app (task=app.*, needs com_ra_tools 4.4.0)
 -->
 <extension type="component" version="4.0" method="upgrade">
     <name>COM_RA_FOOTPATHS</name>
@@ -12,7 +13,7 @@
     <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
     <author>Richard Higham</author>
     <authorUrl>https://ramblerseastcheshire.org.uk</authorUrl>
-    <version>0.3.0</version>
+    <version>0.4.0</version>
     <description>COM_RA_FOOTPATHS_XML_DESCRIPTION</description>
     <namespace path="src">Ramblers\Component\Ra_footpaths</namespace>
 
