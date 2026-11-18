@@ -1,0 +1,61 @@
+/* RA Footpaths, front end. Kept plain so it sits inside any template. */
+.rafp { --rafp-a: #2e7d32; --rafp-b: #f9a825; --rafp-c: #ef6c00; --rafp-d: #c62828; --rafp-n: #757575; }
+
+.rafp-demo-note { background: #fff8e1; border: 1px solid #f0d27a; border-radius: 6px; padding: .5rem .75rem; font-size: .9rem; margin-bottom: 1rem; }
+
+.rafp-crumbs { font-size: .9rem; margin-bottom: .5rem; }
+.rafp-crumbs a { text-decoration: underline; }
+
+.rafp-grade { display: inline-flex; align-items: center; justify-content: center; min-width: 1.8em; height: 1.8em; padding: 0 .4em;
+	border-radius: 999px; font-weight: 700; font-size: .85rem; color: #fff; background: var(--rafp-n); line-height: 1; }
+.rafp-grade-a { background: var(--rafp-a); }
+.rafp-grade-b { background: var(--rafp-b); color: #3a2a00; }
+.rafp-grade-c { background: var(--rafp-c); }
+.rafp-grade-d { background: var(--rafp-d); }
+
+.rafp-legend { display: flex; flex-wrap: wrap; gap: .5rem 1rem; font-size: .85rem; margin: .5rem 0 1rem; padding: 0; list-style: none; }
+.rafp-legend li { display: flex; align-items: center; gap: .35rem; }
+
+.rafp-stats { display: flex; flex-wrap: wrap; gap: .75rem; margin: 0 0 1rem; padding: 0; list-style: none; }
+.rafp-stats li { background: #f4f1ea; border-radius: 8px; padding: .5rem .8rem; min-width: 8rem; }
+.rafp-stats strong { display: block; font-size: 1.4rem; line-height: 1.2; }
+.rafp-stats span { font-size: .85rem; }
+
+.rafp-filters { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; margin: 1rem 0 .5rem; }
+.rafp-filters input[type="search"] { max-width: 16rem; }
+.rafp-filters select { max-width: 14rem; }
+.rafp-filters .rafp-count { font-size: .85rem; color: #555; }
+
+.rafp-table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+.rafp-table th, .rafp-table td { padding: .45rem .5rem; border-bottom: 1px solid #e3ded3; vertical-align: top; text-align: left; }
+.rafp-table thead th { background: #f4f1ea; font-size: .85rem; }
+.rafp-table tbody th { background: transparent; color: inherit; font-weight: 600; }
+.rafp-table td.num, .rafp-table th.num { text-align: right; white-space: nowrap; }
+.rafp-table .rafp-remarks { color: #444; font-size: .9rem; max-width: 32rem; }
+.rafp-table a { font-weight: 600; }
+.rafp-due { color: var(--rafp-d); font-weight: 600; }
+
+.rafp-map { margin: 0 0 .5rem; }
+
+.rafp-facts { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1rem; margin: 0 0 1rem; }
+.rafp-facts dt { font-weight: 600; }
+.rafp-facts dd { margin: 0; }
+
+.rafp-inspection { border: 1px solid #e3ded3; border-radius: 8px; padding: .75rem 1rem; margin: 0 0 .75rem; }
+.rafp-inspection header { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+.rafp-inspection h3 { font-size: 1.05rem; margin: 0; }
+.rafp-inspection .rafp-by { color: #555; font-size: .9rem; }
+.rafp-inspection p { margin: .5rem 0 0; }
+.rafp-faults { list-style: none; margin: .75rem 0 0; padding: 0; }
+.rafp-fault { border-top: 1px dashed #e3ded3; padding: .6rem 0 0; margin: .6rem 0 0; }
+.rafp-fault-head { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .75rem; font-weight: 600; }
+.rafp-fault-head .rafp-gridref { font-weight: 400; color: #555; font-size: .9rem; }
+.rafp-photos { display: flex; flex-wrap: wrap; gap: .5rem; margin: .5rem 0 0; }
+.rafp-photos img { width: 160px; height: 120px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; }
+.rafp-events { margin: .5rem 0 0 1rem; font-size: .9rem; }
+.rafp-older summary { cursor: pointer; font-weight: 600; margin: .5rem 0; }
+
+@media (max-width: 640px) {
+	.rafp-table .rafp-hide-sm { display: none; }
+	.rafp-photos img { width: 46vw; height: 34vw; }
+}

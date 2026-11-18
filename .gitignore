@@ -1,0 +1,8 @@
+# Never commit legacy data: it holds volunteers' contact details and photo GPS.
+*.sql
+!com_ra_footpaths/administrator/sql/*.sql
+*.csv
+images/
+*.zip
+.DS_Store
+.claude/

@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS `#__ra_footpaths_fault_events`;
+DROP TABLE IF EXISTS `#__ra_footpaths_fault_photos`;
+DROP TABLE IF EXISTS `#__ra_footpaths_faults`;
+DROP TABLE IF EXISTS `#__ra_footpaths_inspections`;
+DROP TABLE IF EXISTS `#__ra_footpaths_fault_types`;
+DROP TABLE IF EXISTS `#__ra_footpaths_inspector_parishes`;
+DROP TABLE IF EXISTS `#__ra_footpaths_inspectors`;
+DROP TABLE IF EXISTS `#__ra_footpaths_paths`;
+DROP TABLE IF EXISTS `#__ra_footpaths_parishes`;
+DROP TABLE IF EXISTS `#__ra_footpaths_areas`;

@@ -1,0 +1,73 @@
+<?php
+/**
+ * @package     com_ra_footpaths
+ * @copyright   2026 East Cheshire Ramblers
+ * @license     GNU General Public License version 2 or later
+ */
+
+\defined('_JEXEC') or die;
+
+use Joomla\CMS\HTML\HTMLHelper;
+use Ramblers\Component\Ra_footpaths\Site\Helper\RouteHelper;
+
+$totals = ['paths' => 0, 'recent' => 0, 'never' => 0, 'cd' => 0];
+
+foreach ($this->items as $row) {
+	$totals['paths'] += (int) $row->paths;
+	$totals['recent'] += (int) $row->recent;
+	$totals['never'] += (int) $row->never;
+	$totals['cd'] += (int) $row->grade_c + (int) $row->grade_d;
+}
+?>
+<div class="rafp rafp-parishes">
+	<h1>Footpath inspections</h1>
+	<p class="rafp-demo-note"><strong>Demo, read only.</strong> Records copied from the old Footpath Inspections Database. Nothing here can be changed yet, and changes made in the old system after the copy are not shown.</p>
+
+	<ul class="rafp-stats">
+		<li><strong><?php echo count($this->items); ?></strong><span>parishes</span></li>
+		<li><strong><?php echo number_format($totals['paths']); ?></strong><span>paths</span></li>
+		<li><strong><?php echo number_format($totals['recent']); ?></strong><span>inspected in the last 12 months</span></li>
+		<li><strong><?php echo number_format($totals['cd']); ?></strong><span>graded C or D last time</span></li>
+	</ul>
+
+	<div class="rafp-filters">
+		<label>Find a parish <input type="search" name="search" class="form-control" data-rafp-for="rafp-parish-table" autocomplete="off"></label>
+		<span class="rafp-count" data-rafp-count="rafp-parish-table" aria-live="polite"></span>
+	</div>
+
+	<table class="rafp-table" id="rafp-parish-table" data-rafp-filter>
+		<thead>
+			<tr>
+				<th scope="col">Parish</th>
+				<th scope="col" class="num">Paths</th>
+				<th scope="col" class="num">Inspected in last 12 months</th>
+				<th scope="col" class="num rafp-hide-sm">Never inspected</th>
+				<th scope="col" class="rafp-hide-sm">Latest grades</th>
+				<th scope="col" class="num rafp-hide-sm">Last inspection</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php foreach ($this->items as $row) :
+			$url = RouteHelper::url('view=parish&id=' . (int) $row->id);
+			$paths = (int) $row->paths;
+			$recent = (int) $row->recent;
+			?>
+			<tr data-search="<?php echo $this->escape(strtolower($row->name)); ?>">
+				<th scope="row"><a href="<?php echo $url; ?>"><?php echo $this->escape($row->name); ?></a></th>
+				<td class="num"><?php echo $paths; ?></td>
+				<td class="num"><?php echo $recent; ?><?php echo $paths ? ' <span class="text-muted">(' . round(100 * $recent / $paths) . '%)</span>' : ''; ?></td>
+				<td class="num rafp-hide-sm"><?php echo (int) $row->never; ?></td>
+				<td class="rafp-hide-sm">
+					<?php foreach (['A' => $row->grade_a, 'B' => $row->grade_b, 'C' => $row->grade_c, 'D' => $row->grade_d] as $g => $n) :
+						if ((int) $n === 0) {
+							continue;
+						} ?>
+						<span class="rafp-grade rafp-grade-<?php echo strtolower($g); ?>" title="<?php echo (int) $n . ' paths graded ' . $g; ?>"><?php echo $g . ' ' . (int) $n; ?></span>
+					<?php endforeach; ?>
+				</td>
+				<td class="num rafp-hide-sm"><?php echo $row->last_date ? HTMLHelper::_('date', $row->last_date, 'j M Y') : '&ndash;'; ?></td>
+			</tr>
+		<?php endforeach; ?>
+		</tbody>
+	</table>
+</div>

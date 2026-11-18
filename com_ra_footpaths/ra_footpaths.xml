@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    18/11/26 RH version 0.1.0 - stage 1 read-only demo: legacy import, parish list, parish map, path history
+-->
+<extension type="component" version="4.0" method="upgrade">
+    <name>COM_RA_FOOTPATHS</name>
+    <element>com_ra_footpaths</element>
+    <creationDate>18 Nov 2026</creationDate>
+    <copyright>Copyright (C) 2026 East Cheshire Ramblers. All rights reserved.</copyright>
+    <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+    <author>Richard Higham</author>
+    <authorUrl>https://ramblerseastcheshire.org.uk</authorUrl>
+    <version>0.1.0</version>
+    <description>COM_RA_FOOTPATHS_XML_DESCRIPTION</description>
+    <namespace path="src">Ramblers\Component\Ra_footpaths</namespace>
+
+    <install>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+        </sql>
+    </install>
+    <uninstall>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+        </sql>
+    </uninstall>
+
+    <files folder="site">
+        <folder>language</folder>
+        <folder>src</folder>
+        <folder>tmpl</folder>
+    </files>
+    <languages folder="site/language">
+        <language tag="en-GB">en-GB/com_ra_footpaths.ini</language>
+    </languages>
+
+    <media folder="media" destination="com_ra_footpaths">
+        <filename>joomla.asset.json</filename>
+        <folder>css</folder>
+        <folder>js</folder>
+    </media>
+
+    <administration>
+        <menu link="option=com_ra_footpaths">COM_RA_FOOTPATHS</menu>
+        <files folder="administrator">
+            <filename>access.xml</filename>
+            <filename>config.xml</filename>
+            <folder>language</folder>
+            <folder>services</folder>
+            <folder>sql</folder>
+            <folder>src</folder>
+            <folder>tmpl</folder>
+        </files>
+        <languages folder="administrator/language">
+            <language tag="en-GB">en-GB/com_ra_footpaths.ini</language>
+            <language tag="en-GB">en-GB/com_ra_footpaths.sys.ini</language>
+        </languages>
+    </administration>
+</extension>

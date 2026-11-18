@@ -1,0 +1,119 @@
+<?php
+/**
+ * @package     com_ra_footpaths
+ * @copyright   2026 East Cheshire Ramblers
+ * @license     GNU General Public License version 2 or later
+ */
+
+namespace Ramblers\Component\Ra_footpaths\Administrator\Helper;
+
+\defined('_JEXEC') or die;
+
+use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\User\User;
+
+/**
+ * Shared rules: who may see footpath records, where photos are kept, grade names and colours.
+ */
+final class FootpathsHelper
+{
+	/** Grade letter => [label, colour]. N means the path has never been inspected. */
+	public const GRADES = [
+		'A' => ['Good', '#2e7d32'],
+		'B' => ['Minor problems', '#f9a825'],
+		'C' => ['Significant problems', '#ef6c00'],
+		'D' => ['Serious problem', '#c62828'],
+		'N' => ['Not inspected', '#757575'],
+	];
+
+	/**
+	 * Inspectors (members of the group chosen in the component options) and Super Users.
+	 * Without a group chosen, only Super Users get in.
+	 */
+	public static function canView(?User $user): bool
+	{
+		if ($user === null || $user->guest) {
+			return false;
+		}
+
+		if ($user->authorise('core.admin')) {
+			return true;
+		}
+
+		$group = (int) ComponentHelper::getParams('com_ra_footpaths')->get('inspector_group', 0);
+
+		return $group > 0 && \in_array($group, array_map('intval', $user->getAuthorisedGroups()), true);
+	}
+
+	/** Folder holding the photo files; outside the web root on a live host. */
+	public static function photoPath(): string
+	{
+		$path = trim((string) ComponentHelper::getParams('com_ra_footpaths')->get('photo_path', ''));
+
+		if ($path === '') {
+			$path = JPATH_ROOT . '/private/footpath-photos';
+		}
+
+		return rtrim($path, '/');
+	}
+
+	public static function gradeLabel(?string $grade): string
+	{
+		return self::GRADES[self::normalise($grade)][0];
+	}
+
+	public static function gradeColour(?string $grade): string
+	{
+		return self::GRADES[self::normalise($grade)][1];
+	}
+
+	public static function normalise(?string $grade): string
+	{
+		$grade = strtoupper(trim((string) $grade));
+
+		return isset(self::GRADES[$grade]) ? $grade : 'N';
+	}
+
+	/** Small coloured chip for a grade. */
+	public static function gradeChip(?string $grade): string
+	{
+		$g = self::normalise($grade);
+		$label = htmlspecialchars(self::GRADES[$g][0], ENT_QUOTES, 'UTF-8');
+
+		return '<span class="rafp-grade rafp-grade-' . strtolower($g) . '" title="' . $label . '">'
+			. ($g === 'N' ? '&ndash;' : $g) . '<span class="visually-hidden"> ' . $label . '</span></span>';
+	}
+
+	/** "FP 12" style name. */
+	public static function pathName(string $type, string $number): string
+	{
+		return trim($type . ' ' . $number);
+	}
+
+	/** Sort key so FP 2 comes before FP 10, and 12A after 12 (same idea as the old system). */
+	public static function sortKey(string $type, string $number): int
+	{
+		$types = ['FP' => 0, 'BR' => 1, 'RB' => 2, 'BY' => 3, 'RP' => 4, 'BW' => 5];
+
+		if (!preg_match('/(0\.)*([A-Za-z]?)(\d+)\(*([A-Za-z]*)/', $number, $m)) {
+			return 99999999;
+		}
+
+		$index = (int) $m[3] * 100;
+
+		if ($m[4] !== '') {
+			$index += 10;
+			$suffix = strtoupper($m[4]);
+
+			for ($i = 0; $i < \strlen($suffix); $i++) {
+				$index += \ord($suffix[$i]) - \ord('A');
+			}
+		}
+
+		if ($m[2] !== '') {
+			$index += (\ord(strtoupper($m[2])) - \ord('A') + 1) * 1000000;
+		}
+
+		return $index + ($types[strtoupper($type)] ?? 6);
+	}
+}

@@ -1,0 +1,30 @@
+{
+	"$schema": "https://developer.joomla.org/schemas/json-schema/web_assets.json",
+	"name": "com_ra_footpaths",
+	"version": "0.1.0",
+	"description": "RA Footpaths assets",
+	"license": "GPL-2.0-or-later",
+	"assets": [
+		{
+			"name": "com_ra_footpaths.site",
+			"type": "style",
+			"uri": "com_ra_footpaths/footpaths.css"
+		},
+		{
+			"name": "com_ra_footpaths.map",
+			"type": "script",
+			"uri": "com_ra_footpaths/footpaths-map.js",
+			"attributes": {
+				"defer": true
+			}
+		},
+		{
+			"name": "com_ra_footpaths.list",
+			"type": "script",
+			"uri": "com_ra_footpaths/footpaths-list.js",
+			"attributes": {
+				"defer": true
+			}
+		}
+	]
+}
