@@ -55,6 +55,7 @@ ra.display.footpaths = function (options, data) {
 		}
 
 		var current = L.latLngBounds([]);
+		var paths = L.latLngBounds([]);
 
 		(data.paths || []).forEach(function (p) {
 			if (!p.route) {
@@ -65,12 +66,13 @@ ra.display.footpaths = function (options, data) {
 				L.geoJSON(p.route, {interactive: false, style: {color: "#ffffff", weight: 10, opacity: 0.9}}).addTo(map);
 			}
 			var layer = L.geoJSON(p.route, {
-				style: {color: p.colour, weight: p.current ? 6 : 4, opacity: p.current ? 1 : 0.85}
+				style: {color: p.colour, weight: p.current ? 7 : 5, opacity: p.current ? 1 : 0.9}
 			});
 			layer.bindPopup(pathPopup(p));
 			layer.bindTooltip(p.label, {sticky: true});
 			layer.addTo(map);
 			bounds.extend(layer.getBounds());
+			paths.extend(layer.getBounds());
 			if (p.current) {
 				current.extend(layer.getBounds());
 			}
@@ -88,13 +90,37 @@ ra.display.footpaths = function (options, data) {
 			current.extend(marker.getLatLng());
 		});
 
-		var target = current.isValid() ? current : bounds;
-		if (target.isValid()) {
-			map.fitBounds(target, {padding: [24, 24], maxZoom: 16});
+		// Fit to the paths (not the whole boundary), or to this path and its faults on a path page.
+		var target = current.isValid() ? current : (paths.isValid() ? paths : bounds);
+		// Fitting a whole parish leaves the OS map at Landranger scale (1:50,000), where paths are hard to
+		// follow. So never open further out than Explorer scale (1:25,000): zoom 14 on the OS grid, about
+		// the same as zoom 15 on the other maps. The reader can zoom out to see the rest.
+		function fit() {
+			if (!target.isValid()) {
+				return;
+			}
+			map.fitBounds(target, {padding: [16, 16], maxZoom: 16});
+			var closest = map.options.crs && map.options.crs.code === "EPSG:27700" ? 14 : 15;
+			if (map.getZoom() < closest) {
+				map.setView(target.getCenter(), closest);
+			}
 		}
+		fit();
+
+		// The OS Explorer layer uses its own grid (British National Grid) with different zoom steps, so
+		// fit again once it has replaced the starting layer, or the map ends up zoomed right out.
+		map.on("baselayerchange", function () {
+			if (autoSwitch) {
+				autoSwitch = false;
+				window.setTimeout(fit, 50);
+			}
+		});
 
 		pickOsLayer();
 	};
+
+	// Set while we switch the layer ourselves, so only that switch re-fits the view (not the reader's own).
+	var autoSwitch = false;
 
 	// Open on OS Explorer/Landranger when the layer is there (it needs an OS key).
 	function pickOsLayer() {
@@ -112,6 +138,7 @@ ra.display.footpaths = function (options, data) {
 			var input = find("OS Explorer/Landranger");
 			if (input && !input.disabled) {
 				if (!input.checked) {
+					autoSwitch = true;
 					input.click();
 				}
 				return;
