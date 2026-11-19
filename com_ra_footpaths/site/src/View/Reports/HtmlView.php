@@ -9,9 +9,11 @@ namespace Ramblers\Component\Ra_footpaths\Site\View\Reports;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+use Joomla\CMS\Uri\Uri;
 use Ramblers\Component\Ra_footpaths\Site\Helper\RouteHelper;
 use Ramblers\Component\Ra_footpaths\Site\Model\ReportsModel;
 
@@ -57,6 +59,26 @@ class HtmlView extends BaseHtmlView
 		$this->getDocument()->setMetaData('robots', 'noindex, nofollow');
 
 		parent::display($tpl);
+	}
+
+	/**
+	 * Logo address and group name for the top of a printed report (Options), so each group using the component prints
+	 * its own. Empty strings when not set.
+	 *
+	 * @return array{logo:string,name:string}
+	 */
+	public function brand(): array
+	{
+		$params = ComponentHelper::getParams('com_ra_footpaths');
+		$logo = trim((string) $params->get('report_logo', ''));
+
+		if ($logo !== '') {
+			// Media field values carry "#joomlaImage://..." after the path; local paths are relative to the site.
+			$logo = HTMLHelper::_('cleanImageURL', $logo)->url;
+			$logo = preg_match('#^(https?:)?//#i', $logo) ? $logo : Uri::root(true) . '/' . ltrim($logo, '/');
+		}
+
+		return ['logo' => $logo, 'name' => trim((string) $params->get('report_name', ''))];
 	}
 
 	public function title(): string

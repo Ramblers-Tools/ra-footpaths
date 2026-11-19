@@ -112,6 +112,12 @@ $notes = function (object $inspection, array $faults) use ($e, $f): void {
 	<?php if ($type !== '') : ?>
 	<section class="rafp-report" aria-labelledby="rafp-report-title">
 		<header class="rafp-report-head">
+			<?php $brand = $this->brand(); if ($brand['logo'] !== '' || $brand['name'] !== '') : ?>
+			<div class="rafp-report-brand">
+				<?php if ($brand['logo'] !== '') : ?><img src="<?php echo $e($brand['logo']); ?>" alt="<?php echo $e($brand['name']); ?>"><?php endif; ?>
+				<?php if ($brand['name'] !== '') : ?><span><?php echo $e($brand['name']); ?><br><small>Footpath inspections</small></span><?php endif; ?>
+			</div>
+			<?php endif; ?>
 			<h2 id="rafp-report-title"><?php echo $e($this->title()); ?></h2>
 			<p><?php echo $e($this->period()); ?>. <?php echo $e($this->scope()); ?>
 				<?php if (\in_array($type, ReportsModel::PATH_TYPES, true)) : ?>

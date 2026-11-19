@@ -30,6 +30,10 @@ The report shows on the page; **Print or save as PDF** opens the browser's print
 report is printed, photos are loaded first); **Download for a spreadsheet (CSV)** gives the same rows
 (`task=reports.csv`, UTF-8 with BOM, formula-safe, no-store).
 
+Printed reports start with the group's logo and name, set in Options ("Report logo", "Report heading name"). Both
+are blank on a new install, so any group using the component prints its own branding or none. East Cheshire: the
+logo is `images/East-Cheshire-Ramblers-Group-Logo-Vertical-RGB.jpg`, name "East Cheshire Ramblers".
+
 | Report | Paths listed |
 |---|---|
 | All paths | every active path inspected in the period, with its latest inspection in the period |

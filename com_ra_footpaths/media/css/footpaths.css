@@ -180,6 +180,9 @@
 .rafp-bar-c { background: var(--rafp-c); }
 .rafp-bar-d { background: var(--rafp-d); }
 
+/* Group logo and name: printed reports only (the website already shows them). */
+.rafp-report-brand { display: none; }
+
 /* Printing a report (or saving it as a PDF): only the report, landscape, grades keep their colours. */
 @media print {
 	@page { size: A4 landscape; margin: 12mm; }
@@ -187,6 +190,10 @@
 	body:has(.rafp-report) *:not(:has(.rafp-report)):not(.rafp-report):not(.rafp-report *) { display: none !important; }
 	body:has(.rafp-report) *:has(.rafp-report) { margin: 0 !important; padding: 0 !important; border: 0 !important; box-shadow: none !important; background: none !important; max-width: none !important; width: auto !important; }
 	.rafp-noprint { display: none !important; }
+	.rafp-report-brand { display: flex; align-items: center; gap: 4mm; margin: 0 0 4mm; padding: 0 0 3mm; border-bottom: 1px solid #999; }
+	.rafp-report-brand img { height: 20mm; width: auto; }
+	.rafp-report-brand span { font-size: 14pt; font-weight: 700; line-height: 1.2; }
+	.rafp-report-brand small { font-size: 10pt; font-weight: 400; }
 	.rafp-report { font-size: 10pt; color: #000; }
 	.rafp-report a { color: #000; text-decoration: none; }
 	.rafp-table-wrap { overflow: visible; }
