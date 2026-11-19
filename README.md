@@ -1,7 +1,7 @@
 # RA Footpaths (com_ra_footpaths)
 
 Joomla 5 component for footpath inspections, replacing East Cheshire Ramblers' old Footpath Inspections Database
-(plain PHP, 2002 to 2026). Plan and decisions: `~/personal-projects/briefs/ra-footpaths/brief.md` (local only).
+(plain PHP, 2002 to 2026).
 
 ## Stage 1: read-only demo (version 0.4.0)
 

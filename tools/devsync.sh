@@ -1,9 +1,9 @@
 #!/bin/sh
-# Dev only: copy the component straight into a local Joomla site (default: the ECR dev copy), skipping the installer.
+# Dev only: copy the component straight into a local Joomla site (first argument, or ECR_SITE), skipping the installer.
 # Use the installer (zip) for anything that changes the manifest or the SQL.
 set -e
 cd "$(dirname "$0")/../com_ra_footpaths"
-site=${1:-/Users/richardhigham/.t3/projects/ecr-website-build/site}
+site=${1:-${ECR_SITE:?Give the Joomla site folder as the first argument or in ECR_SITE}}
 rsync -a --delete site/src/ "$site/components/com_ra_footpaths/src/"
 rsync -a --delete site/tmpl/ "$site/components/com_ra_footpaths/tmpl/"
 rsync -a site/language/ "$site/components/com_ra_footpaths/language/"
