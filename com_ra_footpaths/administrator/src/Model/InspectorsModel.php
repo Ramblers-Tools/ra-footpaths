@@ -53,7 +53,7 @@ class InspectorsModel extends BaseDatabaseModel
 		$db = $this->getDatabase();
 		$since = (new \DateTimeImmutable('-12 months'))->format('Y-m-d');
 		$q = $db->getQuery(true)
-			->select(['i.id', 'i.name', 'i.active', 'i.site_managed', 'i.legacy_id'])
+			->select(['i.id', 'i.name', 'i.email', 'i.phone', 'i.membership_no', 'i.active', 'i.site_managed', 'i.legacy_id'])
 			->select('(SELECT MAX(x.inspection_date) FROM ' . $db->quoteName('#__ra_footpaths_inspections', 'x') . ' WHERE x.inspector_id = i.id) AS last_inspection')
 			->select('(SELECT COUNT(*) FROM ' . $db->quoteName('#__ra_footpaths_inspections', 'y') . ' WHERE y.inspector_id = i.id AND y.inspection_date >= :since) AS recent')
 			->from($db->quoteName('#__ra_footpaths_inspectors', 'i'))
@@ -70,7 +70,7 @@ class InspectorsModel extends BaseDatabaseModel
 
 		if ($f['search'] !== '') {
 			$like = '%' . $f['search'] . '%';
-			$q->where('i.name LIKE :search')->bind(':search', $like);
+			$q->where('(i.name LIKE :search OR i.email LIKE :search2)')->bind(':search', $like)->bind(':search2', $like);
 		}
 
 		$linked = 'EXISTS (SELECT 1 FROM ' . $db->quoteName('#__ra_footpaths_inspector_users', 'iu') . ' WHERE iu.inspector_id = i.id)';
@@ -117,12 +117,14 @@ class InspectorsModel extends BaseDatabaseModel
 			$items[$r->inspector_id]->logins[] = $r;
 		}
 
-		// Suggest a website account with exactly the same name for an inspector with no login.
+		// Suggest website accounts with exactly the same name or email for an inspector with no login.
 		$byName = self::usersByName();
+		$byEmail = self::usersByEmail();
 
 		foreach ($items as $item) {
 			if (!$item->logins) {
-				$item->matches = $byName[FootpathsHelper::nameKey((string) $item->name)] ?? [];
+				$item->matches = self::merge($byName[FootpathsHelper::nameKey((string) $item->name)] ?? [],
+					$byEmail[strtolower(trim((string) $item->email))] ?? []);
 			}
 		}
 
@@ -175,6 +177,67 @@ class InspectorsModel extends BaseDatabaseModel
 				->bind(':group', $group, ParameterType::INTEGER)
 				->order('u.name')
 		)->loadObjectList();
+	}
+
+	/** @return array<string,list<object>> website accounts by lower-case email */
+	public static function usersByEmail(): array
+	{
+		$db = Factory::getContainer()->get('DatabaseDriver');
+		$users = $db->setQuery(
+			$db->getQuery(true)->select(['id', 'name', 'username', 'email', 'block'])->from($db->quoteName('#__users'))->order('id')
+		)->loadObjectList();
+
+		$byEmail = [];
+
+		foreach ($users as $u) {
+			$byEmail[strtolower(trim((string) $u->email))][] = $u;
+		}
+
+		unset($byEmail['']);
+
+		return $byEmail;
+	}
+
+	/**
+	 * Accounts from both lists, each once.
+	 *
+	 * @return list<object>
+	 */
+	public static function merge(array $a, array $b): array
+	{
+		$out = [];
+
+		foreach (array_merge($a, $b) as $u) {
+			$out[(int) $u->id] = $u;
+		}
+
+		return array_values($out);
+	}
+
+	/**
+	 * The inspectors these filters show, as CSV rows for footpath admins (with a heading row).
+	 *
+	 * @return list<list<string>>
+	 */
+	public function getExport(array $f): array
+	{
+		$rows = [['Name', 'Active', 'Email', 'Phone', 'Membership no', 'Parishes', 'Last inspection', 'Inspections, last 12 months', 'Website logins']];
+
+		foreach ($this->getItems($f) as $i) {
+			$rows[] = [
+				(string) $i->name,
+				(int) $i->active === 1 ? 'Yes' : 'No',
+				(string) $i->email,
+				(string) $i->phone,
+				(string) $i->membership_no,
+				implode(', ', $i->parishes),
+				(string) $i->last_inspection,
+				(string) (int) $i->recent,
+				implode(', ', array_map(static fn ($l) => (string) $l->username, $i->logins)),
+			];
+		}
+
+		return $rows;
 	}
 
 	/** @return array<string,list<object>> website accounts by FootpathsHelper::nameKey() of their name */

@@ -9,6 +9,7 @@
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Session\Session;
 
 $f = $this->filters;
 $edit = fn (int $id) => $this->link('view=inspector&id=' . $id);
@@ -74,6 +75,12 @@ $options = static function (array $list, $current): string {
 	<div class="col-auto">
 		<button type="submit" class="btn btn-primary"><?php echo Text::_('JSEARCH_FILTER_SUBMIT'); ?></button>
 	</div>
+	<?php if ($this->canDo('core.manage')) : ?>
+		<div class="col-auto">
+			<a class="btn btn-outline-secondary" href="<?php echo $this->link('task=inspector.export&' . Session::getFormToken() . '=1'); ?>"
+				title="<?php echo $this->escape(Text::_('COM_RA_FOOTPATHS_EXPORT_DESC')); ?>"><?php echo Text::_('COM_RA_FOOTPATHS_EXPORT'); ?></a>
+		</div>
+	<?php endif; ?>
 </form>
 
 <table class="table table-striped">
@@ -81,6 +88,7 @@ $options = static function (array $list, $current): string {
 	<thead>
 		<tr>
 			<th scope="col"><?php echo Text::_('COM_RA_FOOTPATHS_COL_NAME'); ?></th>
+			<th scope="col"><?php echo Text::_('COM_RA_FOOTPATHS_COL_CONTACT'); ?></th>
 			<th scope="col"><?php echo Text::_('COM_RA_FOOTPATHS_COL_ACTIVE'); ?></th>
 			<th scope="col"><?php echo Text::_('COM_RA_FOOTPATHS_COL_LAST'); ?></th>
 			<th scope="col" class="text-end"><?php echo Text::_('COM_RA_FOOTPATHS_COL_RECENT'); ?></th>
@@ -99,6 +107,11 @@ $options = static function (array $list, $current): string {
 					<span class="badge bg-secondary" title="<?php echo $this->escape(Text::_('COM_RA_FOOTPATHS_MANAGED_HERE_DESC')); ?>"><?php echo Text::_('COM_RA_FOOTPATHS_MANAGED_HERE'); ?></span>
 				<?php endif; ?>
 			</th>
+			<td class="small">
+				<?php if ($item->email) : ?><div><a href="mailto:<?php echo $this->escape($item->email); ?>"><?php echo $this->escape($item->email); ?></a></div><?php endif; ?>
+				<?php if ($item->phone) : ?><div><?php echo $this->escape($item->phone); ?></div><?php endif; ?>
+				<?php if (!$item->email && !$item->phone) : ?><span class="text-muted">–</span><?php endif; ?>
+			</td>
 			<td><?php echo Text::_((int) $item->active === 1 ? 'JYES' : 'JNO'); ?></td>
 			<td><?php echo $item->last_inspection ? HTMLHelper::_('date', $item->last_inspection, 'j M Y') : '–'; ?></td>
 			<td class="text-end"><?php echo (int) $item->recent; ?></td>
@@ -121,7 +134,7 @@ $options = static function (array $list, $current): string {
 		</tr>
 	<?php endforeach; ?>
 	<?php if (!$this->items) : ?>
-		<tr><td colspan="6"><?php echo Text::_('COM_RA_FOOTPATHS_NONE_FOUND'); ?></td></tr>
+		<tr><td colspan="7"><?php echo Text::_('COM_RA_FOOTPATHS_NONE_FOUND'); ?></td></tr>
 	<?php endif; ?>
 	</tbody>
 </table>

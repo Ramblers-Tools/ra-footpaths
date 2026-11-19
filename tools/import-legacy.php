@@ -19,7 +19,7 @@
  * defaulting to the Joomla site's own login (which then needs SELECT on the legacy schema).
  *
  * What is brought across: areas, parishes (with boundaries), paths (with routes), fault types,
- * inspectors (name and active flag only: no email, phone or membership number), parish allocations,
+ * inspectors (name, active flag; email, phone and membership number for active ones only), parish allocations,
  * inspections, faults, photos and fault follow-up notes. Legacy ids are kept in legacy_id.
  * Coordinates: the old tables store points as "lat lng"; they are swapped to "lng lat" (x = longitude)
  * so ST_AsGeoJSON gives standard GeoJSON.
@@ -267,20 +267,34 @@ try {
 	$typeIds = $ids('fault_types');
 	$report['fault types'] = [count($rows), count($rows)];
 
-	// Inspectors: name and active flag only. Contact details stay in the old system / admins' list.
+	// Inspectors: name, active flag, and contact details (email, phone, membership number) for active inspectors only:
+	// a leaver's details are not brought across.
 	$rows = [];
-	foreach ($legacy->query('SELECT inspector_id, inspector_name, active FROM inspectors ORDER BY inspector_id') as $r) {
-		$rows[] = ['name' => (string) $text($r['inspector_name']), 'active' => (int) $r['active'] ? 1 : 0, 'legacy_id' => (int) $r['inspector_id']];
+	$contact = static function ($v, int $max) use ($text): ?string {
+		$v = trim((string) $text($v));
+
+		return $v === '' || $v === '0' ? null : mb_substr($v, 0, $max);
+	};
+	foreach ($legacy->query('SELECT inspector_id, inspector_name, membership_number, inspector_phone, inspector_email, active FROM inspectors ORDER BY inspector_id') as $r) {
+		$active = (int) $r['active'] ? 1 : 0;
+		$rows[] = [
+			'name' => (string) $text($r['inspector_name']),
+			'email' => $active ? $contact($r['inspector_email'], 100) : null,
+			'phone' => $active ? $contact($r['inspector_phone'], 30) : null,
+			'membership_no' => $active ? $contact($r['membership_number'], 20) : null,
+			'active' => $active,
+			'legacy_id' => (int) $r['inspector_id'],
+		];
 	}
 	// Updated in place by old id, so each inspector keeps its id and website logins. One edited in the admin keeps its
 	// name and active flag; one added in the admin (no old id) is left alone; one gone from the old system stays.
 	// (Update, then insert the new ones: INSERT ... ON DUPLICATE KEY would use up an id per row on every run.)
 	$existingIds = $ids('inspectors');
-	$update = $db->prepare('UPDATE ' . $t('inspectors') . ' SET name = ?, active = ? WHERE legacy_id = ? AND site_managed = 0');
+	$update = $db->prepare('UPDATE ' . $t('inspectors') . ' SET name = ?, email = ?, phone = ?, membership_no = ?, active = ? WHERE legacy_id = ? AND site_managed = 0');
 	$new = [];
 	foreach ($rows as $r) {
 		if (isset($existingIds[$r['legacy_id']])) {
-			$update->execute([$r['name'], $r['active'], $r['legacy_id']]);
+			$update->execute([$r['name'], $r['email'], $r['phone'], $r['membership_no'], $r['active'], $r['legacy_id']]);
 		} else {
 			$new[] = $r;
 		}
@@ -293,7 +307,7 @@ try {
 	$kept = (int) $db->query('SELECT COUNT(*) FROM ' . $t('inspectors') . ' WHERE legacy_id IS NULL')->fetchColumn();
 	$keptManaged = (int) $db->query('SELECT COUNT(*) FROM ' . $t('inspectors') . ' WHERE legacy_id IS NULL AND site_managed = 1')->fetchColumn();
 	$warn[] = 'Kept from the website: ' . (int) $db->query('SELECT COUNT(*) FROM ' . $t('inspector_users'))->fetchColumn() . ' website logins, '
-		. $kept . ' inspectors added in the admin, ' . (count($managed) - $keptManaged) . ' edited in the admin (name, active, parishes)';
+		. $kept . ' inspectors added in the admin, ' . (count($managed) - $keptManaged) . ' edited in the admin (name, contact details, active, parishes)';
 
 	// Parish allocations: from the old system, except for inspectors edited in the admin, whose own are put back.
 	$rows = [];

@@ -30,7 +30,7 @@ class InspectorModel extends BaseDatabaseModel
 		$since = (new \DateTimeImmutable('-12 months'))->format('Y-m-d');
 		$item = $db->setQuery(
 			$db->getQuery(true)
-				->select(['i.id', 'i.name', 'i.active', 'i.site_managed', 'i.legacy_id'])
+				->select(['i.id', 'i.name', 'i.email', 'i.phone', 'i.membership_no', 'i.active', 'i.site_managed', 'i.legacy_id'])
 				->select('(SELECT COUNT(*) FROM ' . $db->quoteName('#__ra_footpaths_inspections', 'x') . ' WHERE x.inspector_id = i.id) AS inspections')
 				->select('(SELECT COUNT(*) FROM ' . $db->quoteName('#__ra_footpaths_inspections', 'y') . ' WHERE y.inspector_id = i.id AND y.inspection_date >= :since) AS recent')
 				->select('(SELECT MAX(z.inspection_date) FROM ' . $db->quoteName('#__ra_footpaths_inspections', 'z') . ' WHERE z.inspector_id = i.id) AS last_inspection')
@@ -49,11 +49,12 @@ class InspectorModel extends BaseDatabaseModel
 		return $id > 0 ? InspectorsModel::logins([$id]) : [];
 	}
 
-	/** Website accounts with the inspector's name that are not linked to them yet. */
+	/** Website accounts with the inspector's name or email that are not linked to them yet. */
 	public function getMatches(object $item, array $logins): array
 	{
 		$linked = array_map(static fn ($l) => (int) $l->id, $logins);
-		$same = InspectorsModel::usersByName()[FootpathsHelper::nameKey((string) $item->name)] ?? [];
+		$same = InspectorsModel::merge(InspectorsModel::usersByName()[FootpathsHelper::nameKey((string) $item->name)] ?? [],
+			InspectorsModel::usersByEmail()[strtolower(trim((string) $item->email))] ?? []);
 
 		return array_values(array_filter($same, static fn ($u) => !\in_array((int) $u->id, $linked, true)));
 	}
@@ -127,17 +128,34 @@ class InspectorModel extends BaseDatabaseModel
 	}
 
 	/**
-	 * Save name, active flag and parishes. Marks the inspector as managed here, so a re-import from the old system
-	 * leaves them alone.
+	 * Save name, contact details, active flag and parishes. Marks the inspector as managed here, so a re-import from
+	 * the old system leaves them alone.
 	 *
+	 * @param  array{email?:string,phone?:string,membership_no?:string}  $contact
 	 * @param  int[]  $parishIds
 	 *
 	 * @return int the inspector's id
+	 *
+	 * @throws \InvalidArgumentException when the email address is not valid
 	 */
-	public function save(int $id, string $name, bool $active, array $parishIds): int
+	public function save(int $id, string $name, bool $active, array $parishIds, array $contact = []): int
 	{
 		$db = $this->getDatabase();
-		$row = (object) ['name' => mb_substr($name, 0, 100), 'active' => $active ? 1 : 0, 'site_managed' => 1];
+		$email = trim((string) ($contact['email'] ?? ''));
+
+		if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+			throw new \InvalidArgumentException(\Joomla\CMS\Language\Text::_('COM_RA_FOOTPATHS_INSPECTOR_EMAIL_INVALID'));
+		}
+
+		$clean = static fn (string $key, int $max): ?string => ($v = mb_substr(trim((string) ($contact[$key] ?? '')), 0, $max)) === '' ? null : $v;
+		$row = (object) [
+			'name' => mb_substr($name, 0, 100),
+			'email' => $email === '' ? null : mb_substr($email, 0, 100),
+			'phone' => $clean('phone', 30),
+			'membership_no' => $clean('membership_no', 20),
+			'active' => $active ? 1 : 0,
+			'site_managed' => 1,
+		];
 
 		$valid = $db->setQuery($db->getQuery(true)->select('id')->from($db->quoteName('#__ra_footpaths_parishes')))->loadColumn();
 		$parishIds = array_values(array_intersect(array_unique(array_map('intval', $parishIds)), array_map('intval', $valid)));
@@ -147,7 +165,7 @@ class InspectorModel extends BaseDatabaseModel
 		try {
 			if ($id > 0) {
 				$row->id = $id;
-				$db->updateObject('#__ra_footpaths_inspectors', $row, 'id');
+				$db->updateObject('#__ra_footpaths_inspectors', $row, 'id', true);
 			} else {
 				$db->insertObject('#__ra_footpaths_inspectors', $row, 'id');
 				$id = (int) $row->id;

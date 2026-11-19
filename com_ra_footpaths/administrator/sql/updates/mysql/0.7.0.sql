@@ -1,0 +1,1 @@
+ALTER TABLE `#__ra_footpaths_inspectors` ADD COLUMN `email` varchar(100) DEFAULT NULL AFTER `name`, ADD COLUMN `phone` varchar(30) DEFAULT NULL AFTER `email`, ADD COLUMN `membership_no` varchar(20) DEFAULT NULL AFTER `phone`;

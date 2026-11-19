@@ -3,7 +3,7 @@
 Joomla 5 component for footpath inspections, replacing East Cheshire Ramblers' old Footpath Inspections Database
 (plain PHP, 2002 to 2026).
 
-## What it does (version 0.6.0)
+## What it does (version 0.7.0)
 
 - **Parishes** (menu item type "Footpath parishes"): a Map / List switch (remembered in the browser). Map: every
   parish boundary, named and shaded by the share of its paths inspected in the last 12 months; click one for its
@@ -128,6 +128,16 @@ those views and tasks to footpath admins only (403 for everyone else, including 
 see the records, but add the group to the footpaths menu item's access level so they see the menu item.
 Joomla only lets a Super User change a Super User's groups, so linking a Super User's login from the website links it
 but says it could not be added to the group.
+
+### Contact details (0.7.0)
+
+Each inspector has email, phone and membership number, shown and edited only on the Inspectors pages (footpath admins:
+administrator, or the website for the Footpath admins group). Inspectors, the path pages and the app never see them.
+The importer brings them across for **active** inspectors only; a leaver's details are not copied. **Export (CSV)** on
+the list downloads the inspectors the filters show, with contact details, parishes, last inspection and logins
+(token in the link, not cached, cells that start with = + - @ made plain text). Each export is written to the change
+log (who, how many rows, which filters). The inspector's email also suggests a website account with the same email
+for linking, as well as same-name accounts.
 
 ### Re-importing keeps admin changes
 

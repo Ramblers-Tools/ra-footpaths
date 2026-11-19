@@ -45,6 +45,10 @@ CREATE TABLE IF NOT EXISTS `#__ra_footpaths_paths` (
 CREATE TABLE IF NOT EXISTS `#__ra_footpaths_inspectors` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL DEFAULT '',
+  -- Contact details: for footpath admins only (admin pages and their export), never shown to inspectors or the app.
+  `email` varchar(100) DEFAULT NULL,
+  `phone` varchar(30) DEFAULT NULL,
+  `membership_no` varchar(20) DEFAULT NULL,
   `active` tinyint NOT NULL DEFAULT 0,
   -- 1 once edited in the admin: a re-import from the old system then leaves its name, active flag and parishes alone.
   `site_managed` tinyint NOT NULL DEFAULT 0,

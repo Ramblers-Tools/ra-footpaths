@@ -61,6 +61,21 @@ $userHead = '<thead><tr><th scope="col">' . Text::_('COM_RA_FOOTPATHS_COL_NAME')
 					<label class="form-label" for="name"><?php echo Text::_('COM_RA_FOOTPATHS_COL_NAME'); ?></label>
 					<input type="text" class="form-control" id="name" name="name" maxlength="100" required value="<?php echo $this->escape($item->name ?? ''); ?>"<?php echo $disabled; ?>>
 				</div>
+				<div class="row">
+					<div class="col-md-6 mb-3">
+						<label class="form-label" for="email"><?php echo Text::_('JGLOBAL_EMAIL'); ?></label>
+						<input type="email" class="form-control" id="email" name="email" maxlength="100" autocomplete="off" value="<?php echo $this->escape($item->email ?? ''); ?>"<?php echo $disabled; ?>>
+					</div>
+					<div class="col-md-3 mb-3">
+						<label class="form-label" for="phone"><?php echo Text::_('COM_RA_FOOTPATHS_PHONE'); ?></label>
+						<input type="tel" class="form-control" id="phone" name="phone" maxlength="30" autocomplete="off" value="<?php echo $this->escape($item->phone ?? ''); ?>"<?php echo $disabled; ?>>
+					</div>
+					<div class="col-md-3 mb-3">
+						<label class="form-label" for="membership_no"><?php echo Text::_('COM_RA_FOOTPATHS_MEMBERSHIP_NO'); ?></label>
+						<input type="text" class="form-control" id="membership_no" name="membership_no" maxlength="20" autocomplete="off" value="<?php echo $this->escape($item->membership_no ?? ''); ?>"<?php echo $disabled; ?>>
+					</div>
+				</div>
+				<p class="form-text mt-0"><?php echo Text::_('COM_RA_FOOTPATHS_CONTACT_HELP'); ?></p>
 				<div class="form-check mb-3">
 					<input class="form-check-input" type="checkbox" id="active" name="active" value="1"<?php echo !$item || (int) $item->active === 1 ? ' checked' : ''; ?><?php echo $disabled; ?>>
 					<label class="form-check-label" for="active"><?php echo Text::_('COM_RA_FOOTPATHS_INSPECTOR_ACTIVE'); ?></label>
