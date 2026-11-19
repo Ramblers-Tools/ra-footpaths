@@ -27,6 +27,8 @@ class HtmlView extends BaseHtmlView
 
 	protected string $mapHtml = '';
 
+	protected bool $canRecord = false;
+
 	public function display($tpl = null): void
 	{
 		$id = Factory::getApplication()->getInput()->getInt('id', 0);
@@ -37,6 +39,7 @@ class HtmlView extends BaseHtmlView
 		}
 
 		$this->inspections = $this->getModel()->getInspections($id);
+		$this->canRecord = FootpathsHelper::canRecord(Factory::getApplication()->getIdentity());
 
 		$wa = $this->getDocument()->getWebAssetManager();
 		$wa->getRegistry()->addExtensionRegistryFile('com_ra_footpaths');
@@ -58,6 +61,27 @@ class HtmlView extends BaseHtmlView
 	public function parishUrl(): string
 	{
 		return RouteHelper::url('view=parish&id=' . (int) $this->path->parish_id);
+	}
+
+	public function canEdit(object $inspection): bool
+	{
+		return FootpathsHelper::canActFor(Factory::getApplication()->getIdentity(), $inspection->inspector_id === null ? null : (int) $inspection->inspector_id);
+	}
+
+	public function canEditNote(object $event): bool
+	{
+		return FootpathsHelper::canEditNote(Factory::getApplication()->getIdentity(),
+			$event->created_by === null ? null : (int) $event->created_by, $event->reporter_id === null ? null : (int) $event->reporter_id);
+	}
+
+	public function editUrl(object $inspection): string
+	{
+		return RouteHelper::url('view=report&id=' . (int) $this->path->id . '&inspection=' . (int) $inspection->id);
+	}
+
+	public function taskUrl(string $task): string
+	{
+		return RouteHelper::url('task=inspection.' . $task);
 	}
 
 	public function photoUrl(int $id, bool $thumb): string

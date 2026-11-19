@@ -12,54 +12,50 @@ namespace Ramblers\Component\Ra_footpaths\Site\Model;
 use Joomla\Database\ParameterType;
 
 /**
- * The "record an inspection" form. Demo only for now: it reads what the form needs and saves nothing.
+ * What the "record an inspection" form needs. Saving is InspectionModel.
  */
 class ReportModel extends PathModel
 {
-	/** @return array<int,object> id, name */
-	public function getFaultTypes(): array
+	/**
+	 * Fault types in use, plus any (retired) type the inspection being changed already has.
+	 *
+	 * @return array<int,object> id, name
+	 */
+	public function getFaultTypes(?object $editing = null): array
 	{
 		$db = $this->getDatabase();
+		$keep = array_values(array_filter(array_map(static fn ($f) => (int) $f->fault_type_id, $editing->faults ?? [])));
 		$query = $db->getQuery(true)
 			->select(['id', 'name'])
 			->from($db->quoteName('#__ra_footpaths_fault_types'))
-			->where('state = 1')
-			->order('name');
-
-		return $db->setQuery($query)->loadObjectList();
-	}
-
-	/** @return array<int,object> id, name: active inspectors */
-	public function getInspectors(): array
-	{
-		$db = $this->getDatabase();
-		$query = $db->getQuery(true)
-			->select(['id', 'name'])
-			->from($db->quoteName('#__ra_footpaths_inspectors'))
-			->where('active = 1')
+			->where($keep ? '(state = 1 OR id IN (' . implode(',', $keep) . '))' : 'state = 1')
 			->order('name');
 
 		return $db->setQuery($query)->loadObjectList();
 	}
 
 	/**
-	 * Inspectors linked to this website login.
+	 * Inspectors to choose from: active ones (only these ids when given, for an inspector recording in their own
+	 * name), plus the current inspector of an inspection being changed even if no longer active.
 	 *
-	 * @return int[]
+	 * @param  int[]|null  $only
+	 *
+	 * @return array<int,object> id, name
 	 */
-	public function getMyInspectorIds(int $userId): array
+	public function getInspectors(?array $only = null, int $current = 0): array
 	{
-		if ($userId <= 0) {
-			return [];
-		}
-
 		$db = $this->getDatabase();
 		$query = $db->getQuery(true)
-			->select('inspector_id')
-			->from($db->quoteName('#__ra_footpaths_inspector_users'))
-			->where('user_id = :uid')
-			->bind(':uid', $userId, ParameterType::INTEGER);
+			->select(['id', 'name'])
+			->from($db->quoteName('#__ra_footpaths_inspectors'))
+			->where('(active = 1 OR id = :current)')
+			->bind(':current', $current, ParameterType::INTEGER)
+			->order('name');
 
-		return array_map('intval', $db->setQuery($query)->loadColumn());
+		if ($only !== null) {
+			$query->whereIn('id', $only ?: [0]);
+		}
+
+		return $db->setQuery($query)->loadObjectList();
 	}
 }

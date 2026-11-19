@@ -219,8 +219,9 @@ class AppModel extends BaseDatabaseModel
 
 	/**
 	 * When anything in each parish last changed: the newest inspection or photo added (their
-	 * `created` times, UTC; a re-import sets them all). ISO 8601. Paths, boundaries and follow-up
-	 * notes have no timestamps yet; stage 2 must add them and include them here.
+	 * `created` times, UTC; a re-import sets them all), or the newest change in the change log (inspections, faults,
+	 * photos and follow-up notes added, changed or deleted on the website). ISO 8601. Paths and boundaries have no
+	 * timestamps yet; map editing (stage 2, part 3) must log them too.
 	 *
 	 * @return array<int,string>
 	 */
@@ -232,6 +233,7 @@ class AppModel extends BaseDatabaseModel
 			. ' UNION ALL SELECT i.path_id, ph.created FROM ' . $db->quoteName('#__ra_footpaths_fault_photos', 'ph')
 			. ' JOIN ' . $db->quoteName('#__ra_footpaths_faults', 'f') . ' ON f.id = ph.fault_id'
 			. ' JOIN ' . $db->quoteName('#__ra_footpaths_inspections', 'i') . ' ON i.id = f.inspection_id'
+			. ' UNION ALL SELECT l.path_id, l.created FROM ' . $db->quoteName('#__ra_footpaths_log', 'l') . ' WHERE l.path_id IS NOT NULL'
 			. ') AS x JOIN ' . $db->quoteName('#__ra_footpaths_paths', 'p') . ' ON p.id = x.path_id'
 			. ' WHERE x.created IS NOT NULL GROUP BY p.parish_id';
 		$out = [];

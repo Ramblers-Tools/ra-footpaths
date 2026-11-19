@@ -10,7 +10,9 @@ namespace Ramblers\Component\Ra_footpaths\Administrator\Helper;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\User\User;
+use Joomla\Database\ParameterType;
 
 /**
  * Shared rules: who may see footpath records, where photos are kept, grade names and colours.
@@ -66,6 +68,67 @@ final class FootpathsHelper
 		$group = (int) ComponentHelper::getParams('com_ra_footpaths')->get('manager_group', 0);
 
 		return $group > 0 && \in_array($group, array_map('intval', $user->getAuthorisedGroups()), true);
+	}
+
+	/** @var array<int,int[]> user id => inspector ids */
+	private static array $mine = [];
+
+	/**
+	 * The inspector records linked to this login (usually one).
+	 *
+	 * @return int[]
+	 */
+	public static function myInspectorIds(?User $user): array
+	{
+		$userId = $user === null || $user->guest ? 0 : (int) $user->id;
+
+		if ($userId <= 0) {
+			return [];
+		}
+
+		if (!isset(self::$mine[$userId])) {
+			$db = Factory::getContainer()->get('DatabaseDriver');
+			$query = $db->getQuery(true)
+				->select('inspector_id')
+				->from($db->quoteName('#__ra_footpaths_inspector_users'))
+				->where('user_id = :uid')
+				->bind(':uid', $userId, ParameterType::INTEGER);
+			self::$mine[$userId] = array_map('intval', $db->setQuery($query)->loadColumn());
+		}
+
+		return self::$mine[$userId];
+	}
+
+	/** Recording inspections: inspectors linked to an inspector record (in their own name), and footpath admins (anyone's). */
+	public static function canRecord(?User $user): bool
+	{
+		return self::canManage($user) || (self::canView($user) && self::myInspectorIds($user) !== []);
+	}
+
+	/** Recording, editing or deleting an inspection in this inspector's name: their own, or anyone's for footpath admins. */
+	public static function canActFor(?User $user, ?int $inspectorId): bool
+	{
+		if (self::canManage($user)) {
+			return true;
+		}
+
+		return $inspectorId !== null && $inspectorId > 0 && self::canView($user)
+			&& \in_array($inspectorId, self::myInspectorIds($user), true);
+	}
+
+	/** Changing or deleting a follow-up note: whoever added it (or the inspector it's under), and footpath admins. */
+	public static function canEditNote(?User $user, ?int $createdBy, ?int $reporterId): bool
+	{
+		if (self::canManage($user)) {
+			return true;
+		}
+
+		if (!self::canView($user)) {
+			return false;
+		}
+
+		return ($createdBy !== null && $createdBy > 0 && $createdBy === (int) $user->id)
+			|| ($reporterId !== null && \in_array($reporterId, self::myInspectorIds($user), true));
 	}
 
 	/** The user group whose members can see the footpath records (0 when none is chosen). */

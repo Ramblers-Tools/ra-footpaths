@@ -42,7 +42,7 @@ class PathModel extends BaseDatabaseModel
 		$db = $this->getDatabase();
 
 		$query = $db->getQuery(true)
-			->select(['i.id', 'i.inspection_date', 'i.grade', 'i.remarks', 'ins.name AS inspector'])
+			->select(['i.id', 'i.inspection_date', 'i.grade', 'i.remarks', 'i.inspector_id', 'ins.name AS inspector'])
 			->from($db->quoteName('#__ra_footpaths_inspections', 'i'))
 			->join('LEFT', $db->quoteName('#__ra_footpaths_inspectors', 'ins'), 'ins.id = i.inspector_id')
 			->where('i.path_id = :id')
@@ -86,9 +86,10 @@ class PathModel extends BaseDatabaseModel
 			}
 
 			$query = $db->getQuery(true)
-				->select(['e.fault_id', 'e.event_date', 'e.notes', 'r.name AS reporter'])
+				->select(['e.id', 'e.fault_id', 'e.event_date', 'e.notes', 'e.reporter_id', 'e.created_by', 'COALESCE(r.name, u.name) AS reporter'])
 				->from($db->quoteName('#__ra_footpaths_fault_events', 'e'))
 				->join('LEFT', $db->quoteName('#__ra_footpaths_inspectors', 'r'), 'r.id = e.reporter_id')
+				->join('LEFT', $db->quoteName('#__users', 'u'), 'u.id = e.created_by')
 				->whereIn('e.fault_id', $faultIds)
 				->order(['e.event_date', 'e.id']);
 

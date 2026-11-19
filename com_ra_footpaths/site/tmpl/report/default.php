@@ -12,6 +12,8 @@ use Ramblers\Component\Ra_footpaths\Administrator\Helper\FootpathsHelper;
 use Ramblers\Component\Ra_footpaths\Site\Helper\RouteHelper;
 
 $path = $this->path;
+$editing = $this->editing;
+$chosenGrade = $editing ? FootpathsHelper::normalise($editing->grade_recorded ?: $editing->grade) : 'A';
 $today = HTMLHelper::_('date', 'now', 'Y-m-d');
 $grades = [
 	'A' => 'Good: no problems',
@@ -26,14 +28,12 @@ $grades = [
 		<a href="<?php echo $this->parishUrl(); ?>"><?php echo $this->escape((string) $path->parish); ?></a> &rsaquo;
 		<a href="<?php echo $this->pathUrl(); ?>"><?php echo $this->escape($this->name()); ?></a>
 	</p>
-	<h1>Record an inspection: <?php echo $this->escape($this->name()); ?>, <?php echo $this->escape((string) $path->parish); ?></h1>
+	<h1><?php echo $editing ? 'Change an inspection' : 'Record an inspection'; ?>: <?php echo $this->escape($this->name()); ?>, <?php echo $this->escape((string) $path->parish); ?></h1>
 
-	<div class="rafp-demo-note" role="note">
-		<strong>Trial version.</strong> Try everything on this form, including photos. Nothing is saved: when you press
-		Save you'll see what would have been recorded. Please tell us what's missing or awkward.
-	</div>
-
-	<?php if ($this->last) : ?>
+	<?php if ($editing) : ?>
+		<p class="rafp-last">You are changing the inspection of <?php echo $this->escape($this->date($editing->inspection_date)); ?>.
+			<?php if ($editing->legacy_id !== null) : ?>It came from the old system.<?php endif; ?></p>
+	<?php elseif ($this->last) : ?>
 		<p class="rafp-last">Last inspected <?php echo $this->escape($this->date($this->last->inspection_date)); ?>
 			<?php echo $this->last->inspector ? 'by ' . $this->escape((string) $this->last->inspector) : ''; ?>,
 			grade <?php echo FootpathsHelper::gradeChip($this->last->grade); ?>,
@@ -41,19 +41,24 @@ $grades = [
 	<?php endif; ?>
 
 	<form class="rafp-form" data-rafp-report novalidate
-		data-path="<?php echo $this->escape($this->name() . ', ' . $path->parish); ?>"
-		data-path-url="<?php echo $this->escape($this->pathUrl()); ?>">
+		data-save-url="<?php echo $this->escape($this->saveUrl()); ?>"
+		data-token="<?php echo $this->escape($this->token()); ?>"
+		data-path-id="<?php echo (int) $path->id; ?>"
+		data-inspection-id="<?php echo $editing ? (int) $editing->id : 0; ?>"
+		data-max-uploads="<?php echo $this->maxUploads(); ?>"
+		data-max-post="<?php echo $this->maxPost(); ?>"
+		data-max-per-fault="<?php echo \Ramblers\Component\Ra_footpaths\Site\Helper\PhotoStore::MAX_PER_FAULT; ?>">
 
 		<fieldset class="rafp-box">
 			<legend>The inspection</legend>
 			<div class="rafp-row">
 				<label for="rafp-date">Date walked</label>
-				<input type="date" id="rafp-date" name="date" class="form-control" value="<?php echo $today; ?>" max="<?php echo $today; ?>" required>
+				<input type="date" id="rafp-date" name="date" class="form-control" value="<?php echo $editing ? $this->escape((string) $editing->inspection_date) : $today; ?>" max="<?php echo $today; ?>" required>
 			</div>
 			<div class="rafp-row">
 				<label for="rafp-inspector">Inspector</label>
 				<select id="rafp-inspector" name="inspector" class="form-select" required>
-					<option value="">Choose&hellip;</option>
+					<?php if (count($this->inspectors) !== 1) : ?><option value="">Choose&hellip;</option><?php endif; ?>
 					<?php foreach ($this->inspectors as $i) : ?>
 						<option value="<?php echo (int) $i->id; ?>"<?php echo (int) $i->id === $this->myInspector ? ' selected' : ''; ?>><?php echo $this->escape((string) $i->name); ?></option>
 					<?php endforeach; ?>
@@ -64,7 +69,7 @@ $grades = [
 				<div class="rafp-grades">
 				<?php foreach ($grades as $g => $label) : ?>
 					<label class="rafp-grade-pick">
-						<input type="radio" name="grade" value="<?php echo $g; ?>"<?php echo $g === 'A' ? ' checked' : ''; ?>>
+						<input type="radio" name="grade" value="<?php echo $g; ?>"<?php echo $g === $chosenGrade ? ' checked' : ''; ?>>
 						<?php echo FootpathsHelper::gradeChip($g); ?> <span><?php echo $this->escape($label); ?></span>
 					</label>
 				<?php endforeach; ?>
@@ -73,7 +78,7 @@ $grades = [
 			</div>
 			<div class="rafp-row">
 				<label for="rafp-remarks">Remarks <span class="rafp-optional">(optional)</span></label>
-				<textarea id="rafp-remarks" name="remarks" class="form-control" rows="3" placeholder="Anything about the path as a whole"></textarea>
+				<textarea id="rafp-remarks" name="remarks" class="form-control" rows="3" placeholder="Anything about the path as a whole"><?php echo $editing ? $this->escape((string) $editing->remarks) : ''; ?></textarea>
 			</div>
 		</fieldset>
 
@@ -84,8 +89,8 @@ $grades = [
 			<p class="rafp-none" data-rafp-no-faults>No faults added. Leave it like this if the path is fine.</p>
 			<div class="rafp-actions">
 				<button type="button" class="btn btn-outline-primary" data-rafp-add>+ Add a fault</button>
-				<?php if ($this->last && $this->last->faults) : ?>
-					<button type="button" class="btn btn-outline-secondary" data-rafp-copy>Copy the <?php echo count($this->last->faults); ?> faults from the last inspection</button>
+				<?php if (!$editing && $this->last && $this->last->faults) : ?>
+					<button type="button" class="btn btn-outline-secondary" data-rafp-copy><?php echo count($this->last->faults) === 1 ? 'Copy the fault' : 'Copy the ' . count($this->last->faults) . ' faults'; ?> from the last inspection</button>
 				<?php endif; ?>
 			</div>
 		</fieldset>
@@ -97,11 +102,22 @@ $grades = [
 			<p class="small text-muted">This path is in its grade colour; the parish's other paths are grey. Numbered dots are the faults on this form.</p>
 		</div>
 
+		<div class="rafp-status" data-rafp-status role="alert" hidden></div>
 		<div class="rafp-actions rafp-submit">
-			<button type="submit" class="btn btn-primary btn-lg">Save inspection</button>
+			<button type="submit" class="btn btn-primary btn-lg" data-rafp-save><?php echo $editing ? 'Save changes' : 'Save inspection'; ?></button>
 			<a class="btn btn-link" href="<?php echo $this->pathUrl(); ?>">Cancel</a>
 		</div>
 	</form>
+
+	<?php if ($editing) : ?>
+		<form class="rafp-delete" method="post" action="<?php echo RouteHelper::url('task=inspection.delete'); ?>"
+			onsubmit="return window.confirm('Delete this inspection, with its faults, photos and notes? This can\'t be undone.');">
+			<input type="hidden" name="id" value="<?php echo (int) $editing->id; ?>">
+			<input type="hidden" name="path_id" value="<?php echo (int) $path->id; ?>">
+			<?php echo HTMLHelper::_('form.token'); ?>
+			<button type="submit" class="btn btn-outline-danger">Delete this inspection</button>
+		</form>
+	<?php endif; ?>
 
 	<template data-rafp-fault-template>
 		<fieldset class="rafp-fault-entry">
@@ -141,24 +157,16 @@ $grades = [
 				<p class="rafp-help" data-rafp-where-note></p>
 			</div>
 			<div class="rafp-row">
-				<label data-for="photos">Photos <span class="rafp-optional">(optional)</span></label>
+				<label data-for="photos">Photos <span class="rafp-optional">(optional, up to <?php echo \Ramblers\Component\Ra_footpaths\Site\Helper\PhotoStore::MAX_PER_FAULT; ?>)</span></label>
+				<div class="rafp-photos rafp-photos-kept" data-rafp-kept hidden></div>
 				<input type="file" class="form-control" data-name="photos" accept="image/*" multiple>
 				<div class="rafp-photos" data-rafp-previews></div>
+				<p class="rafp-help" data-rafp-photo-note></p>
 			</div>
 		</fieldset>
 	</template>
 
 	<script type="application/json" data-rafp-last-faults><?php echo $this->lastFaultsJson(); ?></script>
 
-	<dialog class="rafp-demo-dialog" data-rafp-dialog aria-labelledby="rafp-dialog-title">
-		<h2 id="rafp-dialog-title">Not saved: this is a trial</h2>
-		<p>Thank you for trying the form. <strong>Nothing has been saved</strong>, and the photos haven't left your device.
-			When the form goes live, this is what would be recorded:</p>
-		<div data-rafp-summary></div>
-		<p class="rafp-help">Something missing, or awkward to fill in? Please tell Richard.</p>
-		<div class="rafp-actions">
-			<button type="button" class="btn btn-primary" data-rafp-close>Back to the form</button>
-			<a class="btn btn-outline-secondary" href="<?php echo $this->pathUrl(); ?>">Back to the path</a>
-		</div>
-	</dialog>
+	<script type="application/json" data-rafp-editing><?php echo $this->editingJson(); ?></script>
 </div>

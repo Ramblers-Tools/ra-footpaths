@@ -8,8 +8,12 @@
  * inspectors edited in the admin. Areas, parishes, paths and fault types keep their old ids, so links stay the same. --dry-run does everything inside a transaction that is rolled back and
  * copies no files. Ends with a check of counts against the source.
  *
+ * Inspections and follow-up notes added, changed or deleted on the website since the last import would be lost, so
+ * the import stops if there are any, unless --discard-site-records is given (for a test copy). Each import is
+ * recorded in the change log (#__ra_footpaths_log, action "import").
+ *
  * Usage (on the web server, or in the web container):
- *   php import-legacy.php --site=/var/www/html --legacy-db=fp_legacy --photos=/path/to/database/images [--replace] [--dry-run]
+ *   php import-legacy.php --site=/var/www/html --legacy-db=fp_legacy --photos=/path/to/database/images [--replace] [--dry-run] [--discard-site-records]
  *
  * Legacy database login: LEGACY_DB_USER / LEGACY_DB_PASS / LEGACY_DB_HOST environment variables,
  * defaulting to the Joomla site's own login (which then needs SELECT on the legacy schema).
@@ -27,10 +31,10 @@ if (PHP_SAPI !== 'cli') {
 	exit("Command line only.\n");
 }
 
-$opts = getopt('', ['site:', 'legacy-db:', 'photos:', 'replace', 'dry-run', 'help']);
+$opts = getopt('', ['site:', 'legacy-db:', 'photos:', 'replace', 'dry-run', 'discard-site-records', 'help']);
 
 if (isset($opts['help']) || empty($opts['site']) || empty($opts['legacy-db'])) {
-	fwrite(STDERR, "Usage: php import-legacy.php --site=<joomla root> --legacy-db=<schema> [--photos=<legacy images folder>] [--replace] [--dry-run]\n");
+	fwrite(STDERR, "Usage: php import-legacy.php --site=<joomla root> --legacy-db=<schema> [--photos=<legacy images folder>] [--replace] [--dry-run] [--discard-site-records]\n");
 	exit(1);
 }
 
@@ -39,6 +43,7 @@ $legacyDb = $opts['legacy-db'];
 $photoSource = isset($opts['photos']) ? rtrim($opts['photos'], '/') : '';
 $replace = isset($opts['replace']);
 $dryRun = isset($opts['dry-run']);
+$discard = isset($opts['discard-site-records']);
 
 if (!preg_match('/^[A-Za-z0-9_-]+$/', $legacyDb)) {
 	exit("Bad legacy schema name.\n");
@@ -133,6 +138,28 @@ $existing = (int) $db->query('SELECT COUNT(*) FROM ' . $t('inspections'))->fetch
 if ($existing > 0 && !$replace) {
 	exit("The RA Footpaths tables already hold data. Run again with --replace to empty them and import afresh.\n");
 }
+
+// Records saved on the website (stage 2) would be lost: inspections and notes created there, and any change logged
+// since the last import (edits and deletes of imported ones).
+$hasLog = (bool) $db->query("SHOW TABLES LIKE " . $db->quote($p . 'ra_footpaths_log'))->fetchColumn();
+$siteRecords = (int) $db->query('SELECT COUNT(*) FROM ' . $t('inspections') . ' WHERE legacy_id IS NULL')->fetchColumn()
+	+ (int) $db->query('SELECT COUNT(*) FROM ' . $t('fault_events') . ' WHERE legacy_id IS NULL')->fetchColumn();
+$siteChanges = 0;
+
+if ($hasLog) {
+	$lastImport = $db->query("SELECT MAX(created) FROM " . $t('log') . " WHERE action = 'import'")->fetchColumn();
+	$siteChanges = (int) $db->query("SELECT COUNT(*) FROM " . $t('log') . " WHERE item_type IN ('inspection', 'note')"
+		. ($lastImport ? ' AND created > ' . $db->quote((string) $lastImport) : ''))->fetchColumn();
+}
+
+if (($siteRecords || $siteChanges) && !$discard) {
+	exit('Stopped: ' . $siteRecords . ' inspections and notes were added on the website, and ' . $siteChanges
+		. " changes were logged there since the last import. Importing would lose them.\n"
+		. "Run again with --discard-site-records only if that is intended (for example on a test copy).\n");
+}
+
+// Photo files saved on the website (fault-<fault id>-<random>.jpg): removed after a real import that discards them.
+$sitePhotos = $db->query('SELECT file FROM ' . $t('fault_photos') . " WHERE file LIKE 'fault-%-%'")->fetchAll(PDO::FETCH_COLUMN);
 
 $say(($dryRun ? 'DRY RUN: ' : '') . 'Importing from ' . $legacyDb . ' into ' . $cfg->db . ' (prefix ' . $p . ')');
 
@@ -463,10 +490,22 @@ try {
 		$warn[] = $noInspector . ' inspections have no inspector (none recorded, or inspector not found)';
 	}
 
+	if ($hasLog) {
+		$db->prepare('INSERT INTO ' . $t('log') . " (created, user_id, action, item_type, details) VALUES (?, NULL, 'import', 'all', ?)")
+			->execute([$now, json_encode(['legacy_db' => $legacyDb, 'counts' => $report, 'discarded' => $siteRecords + $siteChanges])]);
+	}
+
 	if ($dryRun) {
 		$db->rollBack();
 	} else {
 		$db->commit();
+
+		foreach (isset($photoDir) ? $sitePhotos : [] as $file) {
+			if (preg_match('/^[A-Za-z0-9_.-]+$/', (string) $file)) {
+				@unlink($photoDir . '/' . $file);
+				@unlink($photoDir . '/thumbs/' . $file);
+			}
+		}
 	}
 } catch (Throwable $e) {
 	if ($db->inTransaction()) {

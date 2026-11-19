@@ -3,7 +3,7 @@
 Joomla 5 component for footpath inspections, replacing East Cheshire Ramblers' old Footpath Inspections Database
 (plain PHP, 2002 to 2026).
 
-## Stage 1: read-only demo (version 0.5.0)
+## What it does (version 0.6.0)
 
 - **Parishes** (menu item type "Footpath parishes"): a Map / List switch (remembered in the browser). Map: every
   parish boundary, named and shaded by the share of its paths inspected in the last 12 months; click one for its
@@ -19,7 +19,30 @@ Joomla 5 component for footpath inspections, replacing East Cheshire Ramblers' o
 - **Admin**: Dashboard (counts per table, inspectors with no website login), **Inspectors** (0.5.0, also on the website
   for footpath admins) and Options (inspector group, footpath admins group, photo folder). See "Inspectors in the admin" below.
 
-Inspections can't be added or changed yet. That is stage 2.
+- **Record an inspection** (0.6.0, stage 2): see "Recording inspections" below.
+
+## Recording inspections (0.6.0)
+
+- **Who**: an inspector whose website login is linked to their inspector record records in their own name, and can
+  change or delete their own inspections. Footpath admins (and Super Users) can record, change or delete anyone's,
+  including the imported ones. Anyone who can see the records can add a follow-up note to a fault; notes can be
+  changed or deleted by whoever added them (or the inspector they are under) and by footpath admins. An inspector with
+  no linked login sees no "Record an inspection" button, only a line asking them to get it linked.
+- **The form** (path page > Record an inspection; "Change or delete" on an inspection): date, inspector, overall grade,
+  remarks, and faults (type, grade B to D, notes, position by phone GPS, map tap or grid reference, up to 6 photos).
+  "Copy the faults from the last inspection" for a new one. The grade saved is never better than the worst fault
+  (`grade_recorded` keeps the one chosen). A second inspection of the same path on the same date asks first. Removing
+  a fault that has follow-up notes asks first; the notes go with it.
+- **Sending**: `footpaths-report.js` posts the form with fetch to `task=inspection.save&format=json` (a plain
+  `index.php` URL: a SEF `.json` URL is not passed to Joomla by the site's .htaccess). The browser shrinks each photo
+  to 2000px on its longest side as a JPEG first (quicker on a weak signal, and the copy carries no EXIF/GPS). The server
+  checks the size (25 MB, 40 megapixels), decodes it, turns it upright and saves a new JPEG in the photo folder as
+  `fault-<fault id>-<random>.jpg`, so nothing of the original file is kept. HEIC: iPhones send JPEG from a web form;
+  a browser that can't read a photo says so. Inspection, faults and photos are saved together or not at all. The
+  form warns before leaving the page with unsaved changes, and keeps everything if the signal drops.
+- **Change log**: `#__ra_footpaths_log` records every add, change and delete of an inspection or note (who, when,
+  the record before and after, as JSON), and each import. The app's "changed" time per parish includes it, so the app
+  sees edits and deletes. Inspections also have `modified` / `modified_by`; notes `created` / `created_by` / `modified`.
 
 ### Who can see it
 
@@ -108,7 +131,10 @@ but says it could not be added to the group.
 
 ### Re-importing keeps admin changes
 
-Until stage 2, inspectors keep recording in the old system and the database is re-imported every week or so.
+Until the old system is switched off, inspectors keep recording there and the database is re-imported every week or so.
+Once anything is recorded, changed or deleted on the website, the import **stops** rather than lose it (inspections or
+notes with no old id, or change-log entries since the last import). `--discard-site-records` overrides that, for a test
+copy only.
 `--replace` now:
 - updates inspectors in place by old id, so their ids and **website logins are always kept**;
 - leaves alone inspectors **added** in the admin (no old id) and the name, active flag and **parishes** of any

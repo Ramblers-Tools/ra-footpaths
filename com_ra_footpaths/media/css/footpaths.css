@@ -84,8 +84,7 @@
 .rafp-map-help ul { margin: 0 0 .5rem; padding-left: 1.2rem; }
 .rafp-map-help li { margin: 0 0 .25rem; }
 
-/* Record an inspection (trial form). */
-.rafp-demo-note { background: #fff4d6; border: 1px solid #f9a825; border-radius: 8px; padding: .75rem 1rem; margin: 0 0 1rem; }
+/* Record or change an inspection. */
 .rafp-last { color: #444; }
 .rafp-box { border: 1px solid #e3ded3; border-radius: 8px; padding: .75rem 1rem 1rem; margin: 0 0 1rem; }
 .rafp-box > legend, .rafp-fault-entry > legend { float: none; width: auto; font-size: 1.1rem; font-weight: 700; padding: 0 .35rem; margin: 0; }
@@ -113,11 +112,16 @@
 .leaflet-marker-icon.rafp-pin { box-sizing: border-box; background: #4A2160; color: #fff; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,.5);
 	display: flex !important; align-items: center; justify-content: center; }
 .leaflet-marker-icon.rafp-pin span { color: #fff !important; font: 700 14px/1 system-ui, sans-serif; text-shadow: none; }
-.rafp-demo-dialog { max-width: 36rem; width: calc(100% - 2rem); border: 0; border-radius: 10px; padding: 1.25rem 1.5rem; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
-.rafp-demo-dialog::backdrop { background: rgba(0,0,0,.5); }
-.rafp-demo-dialog h2 { font-size: 1.3rem; margin: 0 0 .5rem; color: #c62828; }
-.rafp-summary-faults { padding-left: 1.2rem; }
-.rafp-summary-faults li { margin: 0 0 .35rem; }
+.rafp-photo { margin: 0; display: flex; flex-direction: column; align-items: center; }
+.rafp-photo .btn-link { padding: .1rem .25rem; color: #c62828; }
+.rafp-photo.rafp-removed img { opacity: .3; }
+.rafp-photo.rafp-removed .btn-link { color: #4A2160; }
+.rafp-photos-kept { margin-bottom: .5rem; }
+.rafp-status { border-radius: 8px; padding: .65rem .9rem; margin: 0 0 .75rem; }
+.rafp-status-error { background: #fdecea; border: 1px solid #c62828; color: #7f1d1d; }
+.rafp-status-busy { background: #f4eff7; border: 1px solid #4A2160; }
+.rafp-status-ok { background: #e8f5e9; border: 1px solid #2e7d32; }
+.rafp-delete { margin: -1rem 0 2rem; }
 .rafp-record { margin: 0 0 1rem; }
 
 /* A report opened from its fault dot on the map. */
@@ -125,3 +129,13 @@
 .rafp-inspection:focus { outline: none; }
 .rafp-flash { animation: rafp-flash 2.5s ease-out; }
 @keyframes rafp-flash { 0%, 30% { background: #f4eff7; border-color: #4A2160; box-shadow: 0 0 0 3px #4A2160; } 100% { background: transparent; } }
+
+/* Inspection history: edit link and follow-up notes. */
+.rafp-inspection header .rafp-edit { margin-left: auto; font-size: .9rem; }
+.rafp-fault { scroll-margin-top: 1rem; }
+.rafp-events form { display: inline; }
+.rafp-events .btn-link { padding: 0 .25rem; font-size: .85rem; vertical-align: baseline; }
+.rafp-note-form { margin: .4rem 0 0; font-size: .9rem; }
+.rafp-note-form summary { cursor: pointer; color: #4A2160; }
+.rafp-note-form form { display: grid; gap: .4rem; max-width: 32rem; margin: .4rem 0 0; }
+.rafp-note-form .rafp-note-date { max-width: 11rem; }

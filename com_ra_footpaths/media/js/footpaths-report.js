@@ -1,6 +1,8 @@
 /**
- * RA Footpaths: the "record an inspection" form. TRIAL: everything works in the browser, but nothing is sent to the
- * server. Saving shows a popup with what would have been recorded.
+ * RA Footpaths: the "record an inspection" form, for a new inspection or changing one (data-rafp-editing).
+ * Photos are shrunk here (longest side 2000px, JPEG) before sending: quicker on a weak signal, and the copy has none of
+ * the original's EXIF data (GPS position, camera). The form is sent with fetch to task=inspection.save, which answers
+ * in JSON: {ok, redirect}, {sameDay: n} (ask, then send again with same_day_ok) or {error}.
  *
  * Talks to the map (footpaths-map.js) with document events: "rafp-map-pick" {lat, lng} when the map is tapped, and
  * "rafp-markers" {markers: [{n, lat, lng}], focus} to draw the numbered fault dots.
@@ -9,6 +11,7 @@
 	"use strict";
 
 	var order = {A: 0, B: 1, C: 2, D: 3};
+	var LONG_EDGE = 2000;
 	var seq = 0;
 	var picking = null;
 
@@ -49,7 +52,6 @@
 		var list = $(form, "[data-rafp-faults]");
 		var none = $(form, "[data-rafp-no-faults]");
 		var template = document.querySelector("[data-rafp-fault-template]");
-		var dialog = document.querySelector("[data-rafp-dialog]");
 		var hint = $(form, "[data-rafp-pick-hint]");
 		var mapBox = $(form, ".rafp-pick-map");
 		var gradeNote = $(form, "[data-rafp-grade-note]");
@@ -62,9 +64,10 @@
 			return entry.querySelector('[data-name="' + name + '"]');
 		}
 
+		// "" when a fault from the old system had no grade and none has been chosen.
 		function faultGrade(entry) {
 			var r = entry.querySelector('[data-name="fgrade"]:checked');
-			return r ? r.value : "B";
+			return r ? r.value : "";
 		}
 
 		function chosenGrade() {
@@ -77,7 +80,7 @@
 			var g = chosenGrade();
 			entries().forEach(function (e) {
 				var f = faultGrade(e);
-				if (order[f] > order[g]) {
+				if (f && order[f] > order[g]) {
 					g = f;
 				}
 			});
@@ -124,9 +127,70 @@
 			mapBox.classList.remove("rafp-picking");
 		}
 
+		function photoCount(entry) {
+			return entry.querySelectorAll("[data-rafp-kept] [data-photo-id]:not(.rafp-removed)").length + entry.rafpFiles.length;
+		}
+
+		function photoNote(entry) {
+			var n = photoCount(entry), max = +form.dataset.maxPerFault;
+			$(entry, "[data-rafp-photo-note]").textContent = n > max ? "Too many photos: at most " + max + " per fault." : "";
+		}
+
+		// Photos already saved with this fault: each can be marked for removal (and put back) until the form is saved.
+		function showKept(entry, photos) {
+			var box = $(entry, "[data-rafp-kept]");
+			box.hidden = !photos.length;
+			photos.forEach(function (p) {
+				var fig = el("figure", null, "rafp-photo");
+				fig.dataset.photoId = p.id;
+				var img = el("img");
+				img.src = p.thumb;
+				img.alt = "Saved photo";
+				var btn = el("button", "Remove", "btn btn-sm btn-link");
+				btn.type = "button";
+				btn.addEventListener("click", function () {
+					var removed = fig.classList.toggle("rafp-removed");
+					btn.textContent = removed ? "Put back" : "Remove";
+					photoNote(entry);
+					dirty = true;
+				});
+				fig.appendChild(img);
+				fig.appendChild(btn);
+				box.appendChild(fig);
+			});
+		}
+
+		// Photos picked on this visit, not sent yet.
+		function showNew(entry) {
+			var box = $(entry, "[data-rafp-previews]");
+			box.querySelectorAll("img").forEach(function (img) {
+				URL.revokeObjectURL(img.src);
+			});
+			box.textContent = "";
+			entry.rafpFiles.forEach(function (file, i) {
+				var fig = el("figure", null, "rafp-photo");
+				var img = el("img");
+				img.alt = file.name;
+				img.src = URL.createObjectURL(file);
+				var btn = el("button", "Remove", "btn btn-sm btn-link");
+				btn.type = "button";
+				btn.addEventListener("click", function () {
+					entry.rafpFiles.splice(i, 1);
+					showNew(entry);
+				});
+				fig.appendChild(img);
+				fig.appendChild(btn);
+				box.appendChild(fig);
+			});
+			photoNote(entry);
+		}
+
+		// prefill: a fault to copy from the last inspection, or (with an id) one of the inspection being changed.
 		function addFault(prefill) {
 			var entry = template.content.firstElementChild.cloneNode(true);
 			var id = "rafp-f" + (++seq);
+			entry.dataset.key = id;
+			entry.rafpFiles = [];
 
 			entry.querySelectorAll("[data-for]").forEach(function (label) {
 				label.htmlFor = id + "-" + label.dataset.for;
@@ -141,8 +205,14 @@
 
 			if (prefill) {
 				field(entry, "type").value = prefill.type ? String(prefill.type) : "";
-				if (prefill.grade) {
-					entry.querySelector('[data-name="fgrade"][value="' + prefill.grade + '"]').checked = true;
+				var pick = entry.querySelector('[data-name="fgrade"][value="' + (prefill.grade || "") + '"]');
+				if (pick) {
+					pick.checked = true;
+				} else if (prefill.id) {
+					// Old record with no grade (or A): leave it unset rather than quietly making it B.
+					entry.querySelectorAll('[data-name="fgrade"]').forEach(function (r) {
+						r.checked = false;
+					});
 				}
 				field(entry, "remarks").value = prefill.remarks || "";
 				if (typeof prefill.lat === "number" && typeof prefill.lng === "number") {
@@ -152,10 +222,20 @@
 				} else {
 					field(entry, "gridref").value = prefill.gridref || "";
 				}
-				$(entry, "[data-rafp-where-note]").textContent = "Copied from the last inspection: check it's still right.";
+				$(entry, "[data-rafp-where-note]").textContent = prefill.id ? "" : "Copied from the last inspection: check it's still right.";
+				if (prefill.id) {
+					entry.dataset.faultId = prefill.id;
+					entry.dataset.notes = prefill.notes || 0;
+					showKept(entry, prefill.photos || []);
+				}
 			}
 
 			$(entry, "[data-rafp-remove]").addEventListener("click", function () {
+				var notes = +(entry.dataset.notes || 0);
+				if (notes && !window.confirm("This fault has " + notes + (notes === 1 ? " follow-up note" : " follow-up notes")
+					+ ". Removing the fault deletes them too when you save. Remove it?")) {
+					return;
+				}
 				if (picking === entry) {
 					stopPicking();
 				}
@@ -198,18 +278,16 @@
 				drawMarkers();
 			});
 
+			// Photos are collected here, so a phone can add them one at a time; the input is cleared after each pick.
 			field(entry, "photos").addEventListener("change", function () {
-				var box = $(entry, "[data-rafp-previews]");
-				box.textContent = "";
 				Array.prototype.forEach.call(this.files, function (file) {
-					if (file.type.indexOf("image/") !== 0) {
+					if (file.type && file.type.indexOf("image/") !== 0) {
 						return;
 					}
-					var img = el("img");
-					img.alt = file.name;
-					img.src = URL.createObjectURL(file);
-					box.appendChild(img);
+					entry.rafpFiles.push(file);
 				});
+				this.value = "";
+				showNew(entry);
 			});
 
 			list.appendChild(entry);
@@ -253,77 +331,226 @@
 			r.addEventListener("change", updateGradeNote);
 		});
 
-		// --- Save: check the form, then show what would have been recorded. Nothing is sent anywhere.
+		// --- Save
+
+		var status = $(form, "[data-rafp-status]");
+		var saveButton = $(form, "[data-rafp-save]");
+		var dirty = false;
+
+		form.addEventListener("input", function () {
+			dirty = true;
+		});
+		window.addEventListener("beforeunload", function (ev) {
+			if (dirty) {
+				ev.preventDefault();
+				ev.returnValue = "";
+			}
+		});
+
+		function say(text, kind) {
+			status.hidden = !text;
+			status.textContent = text || "";
+			status.className = "rafp-status" + (kind ? " rafp-status-" + kind : "");
+			if (text && kind === "error") {
+				status.scrollIntoView({behavior: "smooth", block: "center"});
+			}
+		}
 
 		function check() {
 			var date = form.elements.date;
 			date.setCustomValidity(date.value && date.value <= date.max ? "" : "Give the date you walked the path (not in the future).");
+			var inspector = form.elements.inspector;
+			inspector.setCustomValidity(inspector.value ? "" : "Choose the inspector.");
+			var ok = true;
 			entries().forEach(function (e) {
 				field(e, "type").setCustomValidity(field(e, "type").value ? "" : "Choose the type of fault.");
+				if (!faultGrade(e) && !e.dataset.faultId) {
+					ok = false;
+				}
+				if (photoCount(e) > +form.dataset.maxPerFault) {
+					ok = false;
+					say($(e, "[data-rafp-fault-title]").textContent + ": at most " + form.dataset.maxPerFault + " photos per fault.", "error");
+				}
 			});
-			return form.reportValidity();
+			return form.reportValidity() && ok;
 		}
 
-		function row(dl, term, value) {
-			dl.appendChild(el("dt", term));
-			dl.appendChild(el("dd", value));
+		// A smaller JPEG copy of a photo, or null if this browser can't read it (for example HEIC outside Safari).
+		function shrink(file) {
+			return new Promise(function (resolve) {
+				function draw(source, w, h, done) {
+					var scale = Math.min(1, LONG_EDGE / Math.max(w, h));
+					var canvas = document.createElement("canvas");
+					canvas.width = Math.max(1, Math.round(w * scale));
+					canvas.height = Math.max(1, Math.round(h * scale));
+					canvas.getContext("2d").drawImage(source, 0, 0, canvas.width, canvas.height);
+					done();
+					canvas.toBlob(function (blob) {
+						resolve(blob);
+					}, "image/jpeg", 0.85);
+				}
+
+				function viaImage() {
+					var url = URL.createObjectURL(file);
+					var img = new Image();
+					img.onload = function () {
+						draw(img, img.naturalWidth, img.naturalHeight, function () {
+							URL.revokeObjectURL(url);
+						});
+					};
+					img.onerror = function () {
+						URL.revokeObjectURL(url);
+						resolve(null);
+					};
+					img.src = url;
+				}
+
+				if (window.createImageBitmap) {
+					// "from-image" turns phone photos the right way up, from their EXIF orientation.
+					window.createImageBitmap(file, {imageOrientation: "from-image"}).then(function (bmp) {
+						draw(bmp, bmp.width, bmp.height, function () {
+							if (bmp.close) {
+								bmp.close();
+							}
+						});
+					}, viaImage);
+				} else {
+					viaImage();
+				}
+			});
 		}
 
-		function summary() {
-			var box = el("div", null, "rafp-summary");
-			var dl = el("dl", null, "rafp-facts");
-			var inspector = form.elements.inspector;
-			var date = new Date(form.elements.date.value + "T12:00:00");
+		function baseName(name) {
+			return (name || "photo").replace(/\.[^.]*$/, "").replace(/[^A-Za-z0-9 _-]/g, "").slice(0, 60) || "photo";
+		}
 
-			row(dl, "Path", form.dataset.path);
-			row(dl, "Date", date.toLocaleDateString("en-GB", {day: "numeric", month: "long", year: "numeric"}));
-			row(dl, "Inspector", inspector.options[inspector.selectedIndex].text);
-			row(dl, "Grade", finalGrade() + (finalGrade() !== chosenGrade() ? " (you chose " + chosenGrade() + "; raised to the worst fault)" : ""));
-			if (form.elements.remarks.value.trim()) {
-				row(dl, "Remarks", form.elements.remarks.value.trim());
+		// Everything to send, photos shrunk. Rejects with a message the user can act on.
+		function build(sameDayOk) {
+			var data = new FormData();
+			var faults = [];
+			var jobs = [];
+			var count = 0;
+
+			data.append(form.dataset.token, "1");
+			data.append("id", form.dataset.inspectionId);
+			data.append("path_id", form.dataset.pathId);
+			data.append("date", form.elements.date.value);
+			data.append("inspector", form.elements.inspector.value);
+			data.append("grade", chosenGrade());
+			data.append("remarks", form.elements.remarks.value);
+			if (sameDayOk) {
+				data.append("same_day_ok", "1");
 			}
-			row(dl, "Faults", entries().length ? String(entries().length) : "None");
-			box.appendChild(dl);
 
-			if (entries().length) {
-				var ol = el("ol", null, "rafp-summary-faults");
-				entries().forEach(function (e) {
-					var type = field(e, "type");
-					var li = el("li");
-					li.appendChild(el("strong", type.options[type.selectedIndex].text + ", grade " + faultGrade(e)));
-					var bits = [];
-					if (field(e, "remarks").value.trim()) {
-						bits.push(field(e, "remarks").value.trim());
-					}
-					bits.push(field(e, "gridref").value.trim() ? "at " + field(e, "gridref").value.trim() : "no position");
-					var n = field(e, "photos").files.length;
-					bits.push(n ? n + (n === 1 ? " photo" : " photos") : "no photos");
-					li.appendChild(el("span", ": " + bits.join("; ")));
-					ol.appendChild(li);
+			entries().forEach(function (e) {
+				var key = e.dataset.key;
+				var keep = [];
+				e.querySelectorAll("[data-rafp-kept] [data-photo-id]:not(.rafp-removed)").forEach(function (fig) {
+					keep.push(+fig.dataset.photoId);
 				});
-				box.appendChild(ol);
+				faults.push({
+					id: +(e.dataset.faultId || 0),
+					key: key,
+					type: +field(e, "type").value,
+					grade: faultGrade(e),
+					remarks: field(e, "remarks").value,
+					gridref: field(e, "gridref").value,
+					lat: e.dataset.lat ? +e.dataset.lat : null,
+					lng: e.dataset.lng ? +e.dataset.lng : null,
+					keep: keep
+				});
+				e.rafpFiles.forEach(function (file) {
+					count++;
+					jobs.push(shrink(file).then(function (blob) {
+						if (blob) {
+							return {key: key, blob: blob, name: baseName(file.name) + ".jpg"};
+						}
+						if (/^image\/(jpeg|png|webp)$/.test(file.type)) {
+							return {key: key, blob: file, name: file.name};
+						}
+						throw new Error("This device can't read the photo \"" + file.name + "\". Please choose a JPEG instead.");
+					}));
+				});
+			});
+
+			if (count > +form.dataset.maxUploads) {
+				return Promise.reject(new Error("That's " + count + " new photos; the site takes at most " + form.dataset.maxUploads
+					+ " in one go. Save with fewer, then add the rest by changing the inspection."));
 			}
-			return box;
+
+			data.append("faults", JSON.stringify(faults));
+
+			return Promise.all(jobs).then(function (photos) {
+				var size = 0;
+				photos.forEach(function (p) {
+					size += p.blob.size;
+					data.append("photos[" + p.key + "][]", p.blob, p.name);
+				});
+				if (+form.dataset.maxPost && size > +form.dataset.maxPost) {
+					throw new Error("The photos are too large to send together. Save with fewer, then add the rest by changing the inspection.");
+				}
+				return data;
+			});
+		}
+
+		function send(sameDayOk) {
+			saveButton.disabled = true;
+			say(entries().some(function (e) {
+				return e.rafpFiles.length;
+			}) ? "Preparing the photos and saving…" : "Saving…", "busy");
+
+			build(sameDayOk).then(function (data) {
+				return fetch(form.dataset.saveUrl, {method: "POST", body: data, credentials: "same-origin", headers: {"Accept": "application/json"}});
+			}).then(function (response) {
+				return response.json().catch(function () {
+					throw new Error(response.status === 413
+						? "The photos are too large to send together. Save with fewer, then add the rest by changing the inspection."
+						: "The site didn't answer properly (error " + response.status + "). Nothing was saved. Please try again.");
+				});
+			}).then(function (reply) {
+				if (reply.ok && reply.redirect) {
+					dirty = false;
+					say("Saved.", "ok");
+					window.location.assign(reply.redirect);
+					return;
+				}
+				saveButton.disabled = false;
+				if (reply.sameDay) {
+					say("");
+					if (window.confirm("This path already has " + (reply.sameDay === 1 ? "an inspection" : reply.sameDay + " inspections")
+						+ " on that date. Save this one as well?")) {
+						send(true);
+					}
+					return;
+				}
+				say(reply.error || "Nothing was saved. Please try again.", "error");
+			}).catch(function (err) {
+				saveButton.disabled = false;
+				say(err && err.message && !/fetch|network/i.test(err.message) ? err.message
+					: "Couldn't reach the website (no signal?). Nothing was saved. Keep this page open and try again.", "error");
+			});
 		}
 
 		form.addEventListener("submit", function (ev) {
 			ev.preventDefault();
+			say("");
 			if (!check()) {
 				return;
 			}
-			var target = dialog.querySelector("[data-rafp-summary]");
-			target.textContent = "";
-			target.appendChild(summary());
-			if (typeof dialog.showModal === "function") {
-				dialog.showModal();
-			} else {
-				window.alert("Not saved: this is a trial. Nothing has been recorded.");
-			}
+			send(false);
 		});
 
-		dialog.querySelector("[data-rafp-close]").addEventListener("click", function () {
-			dialog.close();
-		});
+		// Changing an inspection: fill the form in.
+		var editing = null;
+		try {
+			editing = JSON.parse(document.querySelector("[data-rafp-editing]").textContent);
+		} catch (e) {}
+		if (editing && editing.faults) {
+			editing.faults.forEach(function (f) {
+				addFault(f);
+			});
+		}
+		dirty = false;
 
 		renumber();
 	}

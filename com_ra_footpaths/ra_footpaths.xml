@@ -5,6 +5,7 @@
     18/11/26 RH version 0.3.0 - record an inspection: trial form (nothing saved; popup shows what would be)
     18/11/26 RH version 0.4.0 - read-only JSON endpoints for the Ramblers Tools app (task=app.*, needs com_ra_tools 4.4.0)
     19/11/26 RH version 0.5.0 - Inspectors (admin, and on the website for the Footpath admins group): link logins, parishes, new inspectors
+    19/11/26 RH version 0.6.0 - Stage 2: inspections saved for real (faults, photos), changed or deleted; follow-up notes; change log
 -->
 <extension type="component" version="4.0" method="upgrade">
     <name>COM_RA_FOOTPATHS</name>
@@ -14,7 +15,7 @@
     <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
     <author>Richard Higham</author>
     <authorUrl>https://ramblerseastcheshire.org.uk</authorUrl>
-    <version>0.5.0</version>
+    <version>0.6.0</version>
     <description>COM_RA_FOOTPATHS_XML_DESCRIPTION</description>
     <namespace path="src">Ramblers\Component\Ra_footpaths</namespace>
 

@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS `#__ra_footpaths_log`;
 DROP TABLE IF EXISTS `#__ra_footpaths_fault_events`;
 DROP TABLE IF EXISTS `#__ra_footpaths_fault_photos`;
 DROP TABLE IF EXISTS `#__ra_footpaths_faults`;
