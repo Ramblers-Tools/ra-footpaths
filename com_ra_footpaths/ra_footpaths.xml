@@ -8,7 +8,7 @@
     19/11/26 RH version 0.6.0 - Stage 2: inspections saved for real (faults, photos), changed or deleted; follow-up notes; change log
     19/11/26 RH version 0.7.0 - Inspector contact details (email, phone, membership no.) for footpath admins; CSV export; match logins by email
     19/11/26 RH version 0.8.0 - Reports: the old system's nine reports, filtered by period, parish and fault type; print/PDF and CSV; report logo and name in Options
-    19/11/26 RH version 0.9.0 - Option "Recording on the website" (off: read only for everyone, with a message for inspectors)
+    19/11/26 RH version 0.9.0 - Option "Recording on the website" (off: read only for everyone, with a message for inspectors); the parishes-page note follows the switch and gives the date of the last copy (wording in Options)
 -->
 <extension type="component" version="4.0" method="upgrade">
     <name>COM_RA_FOOTPATHS</name>

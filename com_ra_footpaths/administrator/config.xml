@@ -50,6 +50,16 @@
 			showon="recording:0"
 		/>
 		<field
+			name="readonly_note"
+			type="textarea"
+			label="COM_RA_FOOTPATHS_CONFIG_READONLY_NOTE_LABEL"
+			description="COM_RA_FOOTPATHS_CONFIG_READONLY_NOTE_DESC"
+			default=""
+			rows="3"
+			filter="string"
+			showon="recording:0"
+		/>
+		<field
 			name="report_logo"
 			type="media"
 			label="COM_RA_FOOTPATHS_CONFIG_REPORT_LOGO_LABEL"

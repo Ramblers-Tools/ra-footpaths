@@ -11,7 +11,9 @@ namespace Ramblers\Component\Ra_footpaths\Administrator\Helper;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\User\User;
+use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 
 /**
@@ -112,6 +114,36 @@ final class FootpathsHelper
 		$text = trim((string) ComponentHelper::getParams('com_ra_footpaths')->get('recording_off_message', ''));
 
 		return $text !== '' ? $text : 'Inspections can\'t be recorded on this website yet. Please keep using the old system for now.';
+	}
+
+	/**
+	 * The note at the top of the parishes page while recording is off (Options), with {date} replaced by the date the
+	 * records were last copied from the old system. Empty while recording is on.
+	 */
+	public static function readOnlyNote(): string
+	{
+		if (self::recordingOn()) {
+			return '';
+		}
+
+		$text = trim((string) ComponentHelper::getParams('com_ra_footpaths')->get('readonly_note', ''));
+		$text = $text !== '' ? $text : 'Records copied from the old Footpath Inspections Database on {date}. Keep recording'
+			. ' inspections in the old system for now: anything added there since then is not shown here yet.';
+		$date = self::lastImport();
+
+		// No import yet: drop "on {date}" rather than show a blank.
+		return $date !== null ? str_replace('{date}', $date, $text) : str_replace([' on {date}', '{date}'], '', $text);
+	}
+
+	/** "19 Nov 2026": when the records were last copied from the old system, or null if never. */
+	public static function lastImport(): ?string
+	{
+		$db = Factory::getContainer()->get(DatabaseInterface::class);
+		// The importer logs each run; records imported before it did so carry the import time as their created date.
+		$when = $db->setQuery("SELECT MAX(created) FROM #__ra_footpaths_log WHERE action = 'import'")->loadResult()
+			?: $db->setQuery('SELECT MAX(created) FROM #__ra_footpaths_inspections WHERE legacy_id IS NOT NULL')->loadResult();
+
+		return $when ? HTMLHelper::_('date', $when, 'j M Y') : null;
 	}
 
 	public static function canRecord(?User $user): bool

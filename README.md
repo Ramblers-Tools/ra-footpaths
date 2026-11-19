@@ -63,6 +63,9 @@ Differences from the old system, on purpose:
 button, no Change or delete, no follow-up note forms, and every save/delete/note request is refused on the server.
 Path pages show "Message while recording is off" (or a standard one). Use it while inspections are still entered in
 the old system and copied across by the importer, which refuses to run once anything has been saved on the website.
+While it is off the parishes page starts with "Read only." and a note giving the date of the last import (from the
+import log, or the imported records' created date); the wording is "Note on the parishes page while recording is off",
+with {date} for the date. Nothing is shown while recording is on.
 
 - **Who**: an inspector whose website login is linked to their inspector record records in their own name, and can
   change or delete their own inspections. Footpath admins (and Super Users) can record, change or delete anyone's,

@@ -8,6 +8,7 @@
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\HTML\HTMLHelper;
+use Ramblers\Component\Ra_footpaths\Administrator\Helper\FootpathsHelper;
 use Ramblers\Component\Ra_footpaths\Site\Helper\RouteHelper;
 
 $totals = ['paths' => 0, 'recent' => 0, 'never' => 0, 'cd' => 0];
@@ -27,7 +28,9 @@ foreach ($this->items as $row) {
 			<a class="btn btn-sm btn-secondary" href="<?php echo RouteHelper::url('view=inspectors'); ?>">Manage inspectors</a>
 		<?php endif; ?>
 	</p>
-	<p class="rafp-demo-note"><strong>Demo, read only.</strong> Records copied from the old Footpath Inspections Database. Nothing here can be changed yet, and changes made in the old system after the copy are not shown.</p>
+	<?php if (($note = FootpathsHelper::readOnlyNote()) !== '') : ?>
+	<p class="rafp-demo-note"><strong>Read only.</strong> <?php echo nl2br(htmlspecialchars($note, ENT_QUOTES, 'UTF-8')); ?></p>
+	<?php endif; ?>
 
 	<?php if ($this->mine) : ?>
 	<section class="rafp-mine" aria-labelledby="rafp-mine-title">
