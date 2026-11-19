@@ -4,7 +4,8 @@
  *
  * Reads a copy of the legacy database (loaded from an SQL export into its own schema, never the live
  * host) and the legacy photo folder, and fills the #__ra_footpaths_* tables. Repeatable: --replace
- * empties the tables first. --dry-run does everything inside a transaction that is rolled back and
+ * empties the tables first, except inspectors (updated in place), their website logins, and the parishes of
+ * inspectors edited in the admin. Areas, parishes, paths and fault types keep their old ids, so links stay the same. --dry-run does everything inside a transaction that is rolled back and
  * copies no files. Ends with a check of counts against the source.
  *
  * Usage (on the web server, or in the web container):
@@ -123,7 +124,9 @@ $ids = static function (string $table) use ($db, $t): array {
 	return $db->query('SELECT legacy_id, id FROM ' . $t($table) . ' WHERE legacy_id IS NOT NULL')->fetchAll(PDO::FETCH_KEY_PAIR);
 };
 
-$tables = ['fault_events', 'fault_photos', 'faults', 'inspections', 'fault_types', 'inspector_parishes', 'inspectors', 'paths', 'parishes', 'areas'];
+// Emptied and refilled on every run. Inspectors, their website logins and the parishes of inspectors edited in the
+// admin (site_managed = 1) are kept: see below.
+$tables = ['fault_events', 'fault_photos', 'faults', 'inspections', 'fault_types', 'inspector_parishes', 'paths', 'parishes', 'areas'];
 
 $existing = (int) $db->query('SELECT COUNT(*) FROM ' . $t('inspections'))->fetchColumn();
 
@@ -137,9 +140,9 @@ $say(($dryRun ? 'DRY RUN: ' : '') . 'Importing from ' . $legacyDb . ' into ' . $
 $db->beginTransaction();
 
 try {
-	// Website logins linked to inspectors are set on the site, not in the old system: keep them across a re-import.
-	$logins = $db->query('SELECT i.legacy_id, u.user_id FROM ' . $t('inspector_users') . ' u JOIN ' . $t('inspectors') . ' i ON i.id = u.inspector_id WHERE i.legacy_id IS NOT NULL')->fetchAll(PDO::FETCH_ASSOC);
-	$db->exec('DELETE FROM ' . $t('inspector_users'));
+	// Parishes of inspectors edited in the admin are set on the site, not in the old system: keep them, by the parish's
+	// old id, since parishes are reloaded. (Inspectors are updated in place, so their ids and website logins stay.)
+	$keptParishes = $db->query('SELECT ip.inspector_id, p.legacy_id FROM ' . $t('inspector_parishes') . ' ip JOIN ' . $t('inspectors') . ' i ON i.id = ip.inspector_id JOIN ' . $t('parishes') . ' p ON p.id = ip.parish_id WHERE i.site_managed = 1 AND p.legacy_id IS NOT NULL')->fetchAll(PDO::FETCH_ASSOC);
 
 	foreach ($tables as $name) {
 		$db->exec('DELETE FROM ' . $t($name));
@@ -150,7 +153,7 @@ try {
 	// Areas.
 	$rows = [];
 	foreach ($legacy->query('SELECT area_number, area_name, active FROM areas ORDER BY area_number') as $r) {
-		$rows[] = ['name' => $text($r['area_name']), 'state' => (int) $r['active'] ? 1 : 0, 'legacy_id' => (int) $r['area_number']];
+		$rows[] = ['id' => (int) $r['area_number'], 'name' => $text($r['area_name']), 'state' => (int) $r['active'] ? 1 : 0, 'legacy_id' => (int) $r['area_number']];
 	}
 	$insert($t('areas'), $rows);
 	$areaIds = $ids('areas');
@@ -160,6 +163,7 @@ try {
 	$rows = [];
 	foreach ($legacy->query('SELECT parish_number, parish_name, area, CE_code, pnfs_code, ST_AsText(parish_boundary) AS wkt FROM parishes ORDER BY parish_number') as $r) {
 		$rows[] = [
+			'id' => (int) $r['parish_number'],
 			'area_id' => $areaIds[(int) $r['area']] ?? null,
 			'name' => $text($r['parish_name']),
 			'boundary' => $swap($r['wkt']),
@@ -204,6 +208,7 @@ try {
 		}
 
 		$rows[] = [
+			'id' => (int) $r['right_of_way_id'],
 			'parish_id' => $parishIds[(int) $r['parish']] ?? null,
 			'type' => (string) $text($r['type']),
 			'number' => (string) $text($r['number']),
@@ -229,7 +234,7 @@ try {
 	// Fault types.
 	$rows = [];
 	foreach ($legacy->query('SELECT fault_type_id, fault_type_name FROM fault_types ORDER BY fault_type_name') as $r) {
-		$rows[] = ['name' => (string) $text($r['fault_type_name']), 'state' => 1, 'legacy_id' => (int) $r['fault_type_id']];
+		$rows[] = ['id' => (int) $r['fault_type_id'], 'name' => (string) $text($r['fault_type_name']), 'state' => 1, 'legacy_id' => (int) $r['fault_type_id']];
 	}
 	$insert($t('fault_types'), $rows);
 	$typeIds = $ids('fault_types');
@@ -240,28 +245,43 @@ try {
 	foreach ($legacy->query('SELECT inspector_id, inspector_name, active FROM inspectors ORDER BY inspector_id') as $r) {
 		$rows[] = ['name' => (string) $text($r['inspector_name']), 'active' => (int) $r['active'] ? 1 : 0, 'legacy_id' => (int) $r['inspector_id']];
 	}
-	$insert($t('inspectors'), $rows);
-	$inspectorIds = $ids('inspectors');
-	$report['inspectors'] = [(int) $legacy->query('SELECT COUNT(*) FROM inspectors')->fetchColumn(), count($rows)];
-
-	$rows = [];
-	foreach ($logins as $l) {
-		if (isset($inspectorIds[(int) $l['legacy_id']])) {
-			$rows[] = ['inspector_id' => $inspectorIds[(int) $l['legacy_id']], 'user_id' => (int) $l['user_id']];
-		}
+	// Updated in place by old id, so each inspector keeps its id and website logins. One edited in the admin keeps its
+	// name and active flag; one added in the admin (no old id) is left alone; one gone from the old system stays.
+	$upsert = $db->prepare('INSERT INTO ' . $t('inspectors') . ' (name, active, legacy_id) VALUES (?, ?, ?)'
+		. ' ON DUPLICATE KEY UPDATE name = IF(site_managed = 1, name, VALUES(name)), active = IF(site_managed = 1, active, VALUES(active))');
+	foreach ($rows as $r) {
+		$upsert->execute([$r['name'], $r['active'], $r['legacy_id']]);
 	}
-	$insert($t('inspector_users'), $rows);
-	$report['website logins kept'] = [count($logins), count($rows)];
+	$inspectorIds = $ids('inspectors');
+	$managed = array_map('intval', $db->query('SELECT id FROM ' . $t('inspectors') . ' WHERE site_managed = 1')->fetchAll(PDO::FETCH_COLUMN));
+	$managed = array_fill_keys($managed, true);
+	$report['inspectors'] = [(int) $legacy->query('SELECT COUNT(*) FROM inspectors')->fetchColumn(), count($rows)];
+	$kept = (int) $db->query('SELECT COUNT(*) FROM ' . $t('inspectors') . ' WHERE legacy_id IS NULL')->fetchColumn();
+	$keptManaged = (int) $db->query('SELECT COUNT(*) FROM ' . $t('inspectors') . ' WHERE legacy_id IS NULL AND site_managed = 1')->fetchColumn();
+	$warn[] = 'Kept from the website: ' . (int) $db->query('SELECT COUNT(*) FROM ' . $t('inspector_users'))->fetchColumn() . ' website logins, '
+		. $kept . ' inspectors added in the admin, ' . (count($managed) - $keptManaged) . ' edited in the admin (name, active, parishes)';
 
-	// Parish allocations.
+	// Parish allocations: from the old system, except for inspectors edited in the admin, whose own are put back.
 	$rows = [];
 	foreach ($legacy->query('SELECT DISTINCT inspector, parish FROM parish_inspectors') as $r) {
-		if (isset($inspectorIds[(int) $r['inspector']], $parishIds[(int) $r['parish']])) {
-			$rows[] = ['inspector_id' => $inspectorIds[(int) $r['inspector']], 'parish_id' => $parishIds[(int) $r['parish']]];
+		$inspectorId = $inspectorIds[(int) $r['inspector']] ?? null;
+
+		if ($inspectorId !== null && !isset($managed[$inspectorId]) && isset($parishIds[(int) $r['parish']])) {
+			$rows[] = ['inspector_id' => $inspectorId, 'parish_id' => $parishIds[(int) $r['parish']]];
+		}
+	}
+	$fromOld = count($rows);
+	foreach ($keptParishes as $k) {
+		if (isset($parishIds[(int) $k['legacy_id']])) {
+			$rows[] = ['inspector_id' => (int) $k['inspector_id'], 'parish_id' => $parishIds[(int) $k['legacy_id']]];
 		}
 	}
 	$insert($t('inspector_parishes'), $rows);
-	$report['parish allocations'] = [(int) $legacy->query('SELECT COUNT(*) FROM (SELECT DISTINCT inspector, parish FROM parish_inspectors) x')->fetchColumn(), count($rows)];
+	$report['parish allocations'] = [(int) $legacy->query('SELECT COUNT(*) FROM (SELECT DISTINCT inspector, parish FROM parish_inspectors) x')->fetchColumn(), $fromOld];
+	if ($managed) {
+		$warn[] = 'Parish allocations: ' . ($report['parish allocations'][0] - $fromOld) . ' from the old system skipped and '
+			. (count($rows) - $fromOld) . ' kept, for the inspectors edited in the admin';
+	}
 
 	// Inspections. Grade = what the old system showed: own grade (A if none) raised to the worst fault grade.
 	$worst = $legacy->query("SELECT inspection, MAX(classification) FROM inspection_faults WHERE classification IN ('A','B','C','D') GROUP BY inspection")->fetchAll(PDO::FETCH_KEY_PAIR);

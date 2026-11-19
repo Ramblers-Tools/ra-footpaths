@@ -46,6 +46,8 @@ CREATE TABLE IF NOT EXISTS `#__ra_footpaths_inspectors` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL DEFAULT '',
   `active` tinyint NOT NULL DEFAULT 0,
+  -- 1 once edited in the admin: a re-import from the old system then leaves its name, active flag and parishes alone.
+  `site_managed` tinyint NOT NULL DEFAULT 0,
   `legacy_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_legacy` (`legacy_id`)

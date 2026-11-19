@@ -14,6 +14,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Ramblers\Component\Ra_footpaths\Administrator\Helper\FootpathsHelper;
+use Ramblers\Component\Ra_footpaths\Administrator\Model\InspectorsModel;
 
 /** Counts of what is in the tables, so an import can be checked at a glance. */
 class HtmlView extends BaseHtmlView
@@ -22,6 +23,9 @@ class HtmlView extends BaseHtmlView
 	protected array $counts = [];
 
 	protected string $photoPath = '';
+
+	/** @var array{active:int,recent:int} inspectors with no website login */
+	protected array $unlinked = ['active' => 0, 'recent' => 0];
 
 	/** True when the photo folder is inside the website, where only .htaccess (Apache) keeps it private. */
 	protected bool $photosInSite = false;
@@ -43,6 +47,10 @@ class HtmlView extends BaseHtmlView
 			$this->counts[$key] = (int) $db->setQuery($db->getQuery(true)->select('COUNT(*)')->from($db->quoteName($table)))->loadResult();
 		}
 
+		/** @var InspectorsModel $inspectors */
+		$inspectors = Factory::getApplication()->bootComponent('com_ra_footpaths')->getMVCFactory()
+			->createModel('Inspectors', 'Administrator', ['ignore_request' => true]);
+		$this->unlinked = $inspectors->getUnlinkedCounts();
 		$this->photoPath = FootpathsHelper::photoPath();
 		$root = (realpath(JPATH_ROOT) ?: JPATH_ROOT) . '/';
 		$this->photosInSite = str_starts_with((realpath($this->photoPath) ?: $this->photoPath) . '/', $root);

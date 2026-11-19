@@ -40,9 +40,24 @@ final class FootpathsHelper
 			return true;
 		}
 
-		$group = (int) ComponentHelper::getParams('com_ra_footpaths')->get('inspector_group', 0);
+		$group = self::inspectorGroup();
 
 		return $group > 0 && \in_array($group, array_map('intval', $user->getAuthorisedGroups()), true);
+	}
+
+	/** The user group whose members can see the footpath records (0 when none is chosen). */
+	public static function inspectorGroup(): int
+	{
+		return (int) ComponentHelper::getParams('com_ra_footpaths')->get('inspector_group', 0);
+	}
+
+	/** A name reduced for matching an inspector to a website account: lower case, letters and single spaces only. */
+	public static function nameKey(string $name): string
+	{
+		$name = mb_strtolower(trim($name));
+		$name = (string) preg_replace('/[^\p{L}\s]/u', '', $name);
+
+		return trim((string) preg_replace('/\s+/u', ' ', $name));
 	}
 
 	/** Folder holding the photo files; outside the web root on a live host. */

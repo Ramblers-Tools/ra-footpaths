@@ -3,7 +3,7 @@
 Joomla 5 component for footpath inspections, replacing East Cheshire Ramblers' old Footpath Inspections Database
 (plain PHP, 2002 to 2026).
 
-## Stage 1: read-only demo (version 0.4.0)
+## Stage 1: read-only demo (version 0.5.0)
 
 - **Parishes** (menu item type "Footpath parishes"): a Map / List switch (remembered in the browser). Map: every
   parish boundary, named and shaded by the share of its paths inspected in the last 12 months; click one for its
@@ -16,9 +16,10 @@ Joomla 5 component for footpath inspections, replacing East Cheshire Ramblers' o
 - **Path**: facts, a map with this path highlighted, its fault positions and the parish's other paths in grey, and
   the full inspection history: faults, photos (thumbnails; click for the original in the ECR template's photo popup, with arrows through all the
   path's photos, or a new tab under other templates) and follow-up notes.
-- **Admin**: counts per table, and Options (inspector group, photo folder).
+- **Admin**: Dashboard (counts per table, inspectors with no website login), **Inspectors** (0.5.0) and Options
+  (inspector group, photo folder). See "Inspectors in the admin" below.
 
-Nothing can be added or changed yet. That is stage 2.
+Inspections can't be added or changed yet. That is stage 2.
 
 ### Who can see it
 
@@ -78,6 +79,34 @@ Read-only JSON for the app, at `index.php?option=com_ra_footpaths&format=json&ta
 Code: `site/src/Controller/AppController.php`, `site/src/Model/AppModel.php`, `site/src/Helper/Geo.php`. The app's
 side of the contract is in the app repo's footpaths handover.
 
+## Inspectors in the admin (0.5.0)
+
+Components > RA Footpaths > Inspectors lists every inspector with whether they are active, their last inspection,
+inspections in the last 12 months, parishes and website logins. Filters: name, active / inspected in the last 12
+months / not active / all, with or without a login, parish. An inspector with no login shows how many website
+accounts have exactly the same name.
+
+Open an inspector to:
+- **Link a website login**: from the accounts with the same name, or search by name, username or email. Linking adds
+  the user to the inspectors group set in Options, so they can see the footpath pages and their parishes ("Add to
+  group" puts back a linked user who was taken out). **Unlink** takes them out of the group again, unless they are
+  linked to another inspector (and never leaves a user with no group).
+- **Change the name, active flag and parishes** (each parish shows its other active inspectors).
+- **New inspector** (toolbar) for someone not in the old system.
+
+Permissions: Edit (`core.edit`) to save and to link or unlink, Create (`core.create`) for a new inspector, on top of
+Access Administration Interface (`core.manage`). Every change is a POST with the form token.
+
+### Re-importing keeps admin changes
+
+Until stage 2, inspectors keep recording in the old system and the database is re-imported every week or so.
+`--replace` now:
+- updates inspectors in place by old id, so their ids and **website logins are always kept**;
+- leaves alone inspectors **added** in the admin (no old id) and the name, active flag and **parishes** of any
+  inspector **saved** in the admin (`site_managed = 1`, shown as "Edited here"). Others still follow the old system;
+- loads areas, parishes, paths and fault types with their **old ids**, so parish and path links (and the app's
+  cached parishes) stay the same across re-imports. Inspections, faults and photos still get new ids.
+
 ## Importing the old database
 
 1. Load an SQL export of the old database into its own schema on the same database server (never connect to the live
@@ -98,8 +127,7 @@ holding the new files with the old data. It's a one-off dev tool: rerun it with 
 Inspectors come across with name and active flag only (no email, phone or membership number).
 
 Website logins are linked to inspectors in `#__ra_footpaths_inspector_users` (one inspector can have several logins,
-for example a personal and a club address). There is no screen for this yet (stage 2), so add rows by SQL. The
-importer keeps these links across a `--replace` re-import, matching on the old inspector id.
+for example a personal and a club address), set on the admin Inspectors page.
 
 Result on the dev site (18 Nov 2026 export):
 
