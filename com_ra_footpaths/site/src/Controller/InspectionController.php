@@ -11,6 +11,7 @@ namespace Ramblers\Component\Ra_footpaths\Site\Controller;
 
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\BaseController;
+use Ramblers\Component\Ra_footpaths\Administrator\Helper\FootpathsHelper;
 use Ramblers\Component\Ra_footpaths\Site\Helper\RouteHelper;
 use Ramblers\Component\Ra_footpaths\Site\Model\InspectionModel;
 
@@ -22,6 +23,24 @@ use Ramblers\Component\Ra_footpaths\Site\Model\InspectionModel;
  */
 class InspectionController extends BaseController
 {
+	/** While recording is off (Options) nothing can be saved, changed or deleted, whatever the request. */
+	public function execute($task)
+	{
+		if (!FootpathsHelper::recordingOn()) {
+			$message = FootpathsHelper::recordingOffMessage();
+
+			if (strtolower((string) $task) === 'save') {
+				$this->json(403, ['error' => $message]);
+			}
+
+			$this->setRedirect(RouteHelper::url('view=path&id=' . $this->input->post->getInt('path_id', 0), false), $message, 'warning');
+
+			return $this;
+		}
+
+		return parent::execute($task);
+	}
+
 	public function save(): void
 	{
 		if (!$this->checkToken('post', false)) {

@@ -90,7 +90,9 @@ $renderInspection = function (object $inspection) use ($date, $noteForm): void {
 						<?php endforeach; ?>
 						</ul>
 					<?php endif; ?>
-					<details class="rafp-note-form"><summary>Add a follow-up note</summary><?php echo $noteForm($fault, null); ?></details>
+					<?php if (FootpathsHelper::recordingOn()) : ?>
+						<details class="rafp-note-form"><summary>Add a follow-up note</summary><?php echo $noteForm($fault, null); ?></details>
+					<?php endif; ?>
 				</li>
 			<?php endforeach; ?>
 			</ul>
@@ -121,6 +123,8 @@ $renderInspection = function (object $inspection) use ($date, $noteForm): void {
 
 	<?php if ($this->canRecord) : ?>
 		<p class="rafp-record"><a class="btn btn-primary" href="<?php echo RouteHelper::url('view=report&id=' . (int) $path->id); ?>">Record an inspection</a></p>
+	<?php elseif (!FootpathsHelper::recordingOn()) : ?>
+		<p class="rafp-record small text-muted"><?php echo $this->escape(FootpathsHelper::recordingOffMessage()); ?></p>
 	<?php else : ?>
 		<p class="rafp-record small text-muted">To record inspections, your website login needs linking to your inspector record: ask the footpaths secretary.</p>
 	<?php endif; ?>

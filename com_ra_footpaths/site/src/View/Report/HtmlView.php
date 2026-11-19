@@ -58,6 +58,10 @@ class HtmlView extends BaseHtmlView
 
 		$user = Factory::getApplication()->getIdentity();
 
+		if (!FootpathsHelper::recordingOn()) {
+			throw new \Exception(FootpathsHelper::recordingOffMessage(), 403);
+		}
+
 		if (!FootpathsHelper::canRecord($user)) {
 			throw new \Exception('Your website login is not linked to an inspector yet, so you can\'t record inspections. Please ask the footpaths secretary to link it.', 403);
 		}

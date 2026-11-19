@@ -100,14 +100,36 @@ final class FootpathsHelper
 	}
 
 	/** Recording inspections: inspectors linked to an inspector record (in their own name), and footpath admins (anyone's). */
+	/** Option "Recording on the website". Off: nobody saves, changes or deletes inspections or notes. */
+	public static function recordingOn(): bool
+	{
+		return (bool) ComponentHelper::getParams('com_ra_footpaths')->get('recording', 1);
+	}
+
+	/** What inspectors see instead of the Record button while recording is off. */
+	public static function recordingOffMessage(): string
+	{
+		$text = trim((string) ComponentHelper::getParams('com_ra_footpaths')->get('recording_off_message', ''));
+
+		return $text !== '' ? $text : 'Inspections can\'t be recorded on this website yet. Please keep using the old system for now.';
+	}
+
 	public static function canRecord(?User $user): bool
 	{
+		if (!self::recordingOn()) {
+			return false;
+		}
+
 		return self::canManage($user) || (self::canView($user) && self::myInspectorIds($user) !== []);
 	}
 
 	/** Recording, editing or deleting an inspection in this inspector's name: their own, or anyone's for footpath admins. */
 	public static function canActFor(?User $user, ?int $inspectorId): bool
 	{
+		if (!self::recordingOn()) {
+			return false;
+		}
+
 		if (self::canManage($user)) {
 			return true;
 		}
@@ -119,6 +141,10 @@ final class FootpathsHelper
 	/** Changing or deleting a follow-up note: whoever added it (or the inspector it's under), and footpath admins. */
 	public static function canEditNote(?User $user, ?int $createdBy, ?int $reporterId): bool
 	{
+		if (!self::recordingOn()) {
+			return false;
+		}
+
 		if (self::canManage($user)) {
 			return true;
 		}

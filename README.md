@@ -3,7 +3,7 @@
 Joomla 5 component for footpath inspections, replacing East Cheshire Ramblers' old Footpath Inspections Database
 (plain PHP, 2002 to 2026).
 
-## What it does (version 0.8.0)
+## What it does (version 0.9.0)
 
 - **Parishes** (menu item type "Footpath parishes"): a Map / List switch (remembered in the browser). Map: every
   parish boundary, named and shaded by the share of its paths inspected in the last 12 months; click one for its
@@ -58,6 +58,11 @@ Differences from the old system, on purpose:
   web folder, readable by anyone with the address.
 
 ## Recording inspections (0.6.0)
+
+**Switch (0.9.0):** Options "Recording on the website". No = read only for everyone, admins included: no Record
+button, no Change or delete, no follow-up note forms, and every save/delete/note request is refused on the server.
+Path pages show "Message while recording is off" (or a standard one). Use it while inspections are still entered in
+the old system and copied across by the importer, which refuses to run once anything has been saved on the website.
 
 - **Who**: an inspector whose website login is linked to their inspector record records in their own name, and can
   change or delete their own inspections. Footpath admins (and Super Users) can record, change or delete anyone's,

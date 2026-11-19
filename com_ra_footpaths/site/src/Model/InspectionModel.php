@@ -438,6 +438,10 @@ class InspectionModel extends BaseDatabaseModel
 	 */
 	public function saveNote(User $user, int $noteId, int $faultId, string $date, string $notes): int
 	{
+		if (!FootpathsHelper::recordingOn()) {
+			throw new \RuntimeException(FootpathsHelper::recordingOffMessage(), 403);
+		}
+
 		$db = $this->getDatabase();
 		$notes = mb_substr(trim($notes), 0, 2000);
 		$parsed = \DateTimeImmutable::createFromFormat('!Y-m-d', $date);
