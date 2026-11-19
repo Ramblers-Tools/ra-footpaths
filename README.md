@@ -16,14 +16,14 @@ Joomla 5 component for footpath inspections, replacing East Cheshire Ramblers' o
 - **Path**: facts, a map with this path highlighted, its fault positions and the parish's other paths in grey, and
   the full inspection history: faults, photos (thumbnails; click for the original in the ECR template's photo popup, with arrows through all the
   path's photos, or a new tab under other templates) and follow-up notes.
-- **Admin**: Dashboard (counts per table, inspectors with no website login), **Inspectors** (0.5.0) and Options
-  (inspector group, photo folder). See "Inspectors in the admin" below.
+- **Admin**: Dashboard (counts per table, inspectors with no website login), **Inspectors** (0.5.0, also on the website
+  for footpath admins) and Options (inspector group, footpath admins group, photo folder). See "Inspectors in the admin" below.
 
 Inspections can't be added or changed yet. That is stage 2.
 
 ### Who can see it
 
-Members of the user group chosen in Options ("Footpath inspectors group"), and Super Users. The check is made for every
+Members of the user group chosen in Options ("Footpath inspectors group") or "Footpath admins group", and Super Users. The check is made for every
 request in the site dispatcher, so a direct URL is refused too (guests are sent to log in, others get a 403). Give the
 menu item an access level containing that group so nobody else sees it in the menu.
 
@@ -96,6 +96,15 @@ Open an inspector to:
 
 Permissions: Edit (`core.edit`) to save and to link or unlink, Create (`core.create`) for a new inspector, on top of
 Access Administration Interface (`core.manage`). Every change is a POST with the form token.
+
+**On the website, for footpath admins.** Members of the group chosen in Options as "Footpath admins group" (on the
+ECR site `footpaths-admins`, under Registered), and Super Users, see a **Manage inspectors** button on the parishes
+page. It opens the same Inspectors list and inspector page inside the site template (`view=inspectors`,
+`view=inspector`, tasks `inspector.save|link|unlink`), so they need no administrator login. The site Dispatcher allows
+those views and tasks to footpath admins only (403 for everyone else, including inspectors). Footpath admins can also
+see the records, but add the group to the footpaths menu item's access level so they see the menu item.
+Joomla only lets a Super User change a Super User's groups, so linking a Super User's login from the website links it
+but says it could not be added to the group.
 
 ### Re-importing keeps admin changes
 

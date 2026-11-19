@@ -21,7 +21,15 @@ final class RouteHelper
 	{
 		$itemId = self::itemId();
 
-		return Route::_('index.php?option=com_ra_footpaths&' . $query . ($itemId ? '&Itemid=' . $itemId : ''), $xhtml);
+		return Route::_('index.php?option=com_ra_footpaths' . ($query !== '' ? '&' . $query : '') . ($itemId ? '&Itemid=' . $itemId : ''), $xhtml);
+	}
+
+	/** Hidden Itemid input for a GET form, so it stays under the footpaths menu item. */
+	public static function itemIdField(): string
+	{
+		$itemId = self::itemId();
+
+		return $itemId ? '<input type="hidden" name="Itemid" value="' . $itemId . '">' : '';
 	}
 
 	private static function itemId(): int

@@ -12,6 +12,7 @@ namespace Ramblers\Component\Ra_footpaths\Administrator\View\Inspectors;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Ramblers\Component\Ra_footpaths\Administrator\Helper\FootpathsHelper;
 
@@ -39,17 +40,43 @@ class HtmlView extends BaseHtmlView
 		$this->unlinked = $model->getUnlinkedCounts();
 		$this->group = FootpathsHelper::inspectorGroup();
 
+		$this->addToolbar();
+
+		parent::display($tpl);
+	}
+
+	/** True on the website (footpath admins), false in the administrator. */
+	public bool $frontend = false;
+
+	protected function addToolbar(): void
+	{
 		ToolbarHelper::title(Text::_('COM_RA_FOOTPATHS_INSPECTORS'), 'users');
 		$user = Factory::getApplication()->getIdentity();
 
-		if ($user->authorise('core.create', 'com_ra_footpaths')) {
+		if ($this->canDo('core.create')) {
 			ToolbarHelper::link('index.php?option=com_ra_footpaths&view=inspector', 'COM_RA_FOOTPATHS_INSPECTOR_NEW', 'new');
 		}
 
 		if ($user->authorise('core.admin', 'com_ra_footpaths')) {
 			ToolbarHelper::preferences('com_ra_footpaths');
 		}
+	}
 
-		parent::display($tpl);
+	/** May the current user do this (core.create, core.edit)? */
+	public function canDo(string $action): bool
+	{
+		return Factory::getApplication()->getIdentity()->authorise($action, 'com_ra_footpaths');
+	}
+
+	/** A link inside the component; $query without option, e.g. "view=inspector&id=3". */
+	public function link(string $query = ''): string
+	{
+		return Route::_('index.php?option=com_ra_footpaths' . ($query !== '' ? '&' . $query : ''));
+	}
+
+	/** Hidden inputs a GET form needs to come back to $view. */
+	public function hiddenFields(string $view): string
+	{
+		return '<input type="hidden" name="option" value="com_ra_footpaths"><input type="hidden" name="view" value="' . htmlspecialchars($view) . '">';
 	}
 }

@@ -9,10 +9,9 @@
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Router\Route;
 
 $f = $this->filters;
-$edit = static fn (int $id) => Route::_('index.php?option=com_ra_footpaths&view=inspector&id=' . $id);
+$edit = fn (int $id) => $this->link('view=inspector&id=' . $id);
 $options = static function (array $list, $current): string {
 	$html = '';
 	foreach ($list as $value => $label) {
@@ -21,6 +20,15 @@ $options = static function (array $list, $current): string {
 	return $html;
 };
 ?>
+<?php if ($this->frontend) : ?>
+	<h1><?php echo Text::_('COM_RA_FOOTPATHS_INSPECTORS'); ?></h1>
+	<p class="d-flex flex-wrap gap-2">
+		<a class="btn btn-secondary" href="<?php echo $this->link('view=parishes'); ?>"><?php echo Text::_('COM_RA_FOOTPATHS_BACK_TO_PARISHES'); ?></a>
+		<?php if ($this->canDo('core.create')) : ?>
+			<a class="btn btn-primary" href="<?php echo $this->link('view=inspector'); ?>"><?php echo Text::_('COM_RA_FOOTPATHS_INSPECTOR_NEW'); ?></a>
+		<?php endif; ?>
+	</p>
+<?php endif; ?>
 <?php if ($this->group <= 0) : ?>
 	<div class="alert alert-warning"><?php echo Text::_('COM_RA_FOOTPATHS_NO_GROUP'); ?></div>
 <?php endif; ?>
@@ -30,9 +38,8 @@ $options = static function (array $list, $current): string {
 	<?php echo Text::_('COM_RA_FOOTPATHS_INSPECTORS_INTRO'); ?>
 </p>
 
-<form action="<?php echo Route::_('index.php?option=com_ra_footpaths&view=inspectors'); ?>" method="get" class="row g-2 align-items-end mb-3">
-	<input type="hidden" name="option" value="com_ra_footpaths">
-	<input type="hidden" name="view" value="inspectors">
+<form action="<?php echo $this->link('view=inspectors'); ?>" method="get" class="row g-2 align-items-end mb-3">
+	<?php echo $this->hiddenFields('inspectors'); ?>
 	<div class="col-auto">
 		<label class="form-label" for="filter_search"><?php echo Text::_('COM_RA_FOOTPATHS_FILTER_NAME'); ?></label>
 		<input type="search" class="form-control" id="filter_search" name="filter_search" value="<?php echo $this->escape($f['search']); ?>">

@@ -247,11 +247,18 @@ try {
 	}
 	// Updated in place by old id, so each inspector keeps its id and website logins. One edited in the admin keeps its
 	// name and active flag; one added in the admin (no old id) is left alone; one gone from the old system stays.
-	$upsert = $db->prepare('INSERT INTO ' . $t('inspectors') . ' (name, active, legacy_id) VALUES (?, ?, ?)'
-		. ' ON DUPLICATE KEY UPDATE name = IF(site_managed = 1, name, VALUES(name)), active = IF(site_managed = 1, active, VALUES(active))');
+	// (Update, then insert the new ones: INSERT ... ON DUPLICATE KEY would use up an id per row on every run.)
+	$existingIds = $ids('inspectors');
+	$update = $db->prepare('UPDATE ' . $t('inspectors') . ' SET name = ?, active = ? WHERE legacy_id = ? AND site_managed = 0');
+	$new = [];
 	foreach ($rows as $r) {
-		$upsert->execute([$r['name'], $r['active'], $r['legacy_id']]);
+		if (isset($existingIds[$r['legacy_id']])) {
+			$update->execute([$r['name'], $r['active'], $r['legacy_id']]);
+		} else {
+			$new[] = $r;
+		}
 	}
+	$insert($t('inspectors'), $new);
 	$inspectorIds = $ids('inspectors');
 	$managed = array_map('intval', $db->query('SELECT id FROM ' . $t('inspectors') . ' WHERE site_managed = 1')->fetchAll(PDO::FETCH_COLUMN));
 	$managed = array_fill_keys($managed, true);

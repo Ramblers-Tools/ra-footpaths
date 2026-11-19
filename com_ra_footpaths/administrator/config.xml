@@ -11,6 +11,15 @@
 			<option value="">COM_RA_FOOTPATHS_CONFIG_CHOOSE_GROUP</option>
 		</field>
 		<field
+			name="manager_group"
+			type="usergrouplist"
+			label="COM_RA_FOOTPATHS_CONFIG_MANAGER_GROUP_LABEL"
+			description="COM_RA_FOOTPATHS_CONFIG_MANAGER_GROUP_DESC"
+			default=""
+			>
+			<option value="">COM_RA_FOOTPATHS_CONFIG_CHOOSE_GROUP</option>
+		</field>
+		<field
 			name="photo_path"
 			type="text"
 			label="COM_RA_FOOTPATHS_CONFIG_PHOTO_PATH_LABEL"

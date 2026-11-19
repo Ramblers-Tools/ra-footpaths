@@ -9,11 +9,10 @@
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Router\Route;
 
 $item = $this->item;
 $id = $item ? (int) $item->id : 0;
-$action = Route::_('index.php?option=com_ra_footpaths');
+$action = $this->link();
 $disabled = $this->canEdit ? '' : ' disabled';
 
 // A small POST form with one button, for linking or unlinking a login.
@@ -39,6 +38,10 @@ $userRow = function (object $u, string $buttons): string {
 $userHead = '<thead><tr><th scope="col">' . Text::_('COM_RA_FOOTPATHS_COL_NAME') . '</th><th scope="col">' . Text::_('JGLOBAL_USERNAME')
 	. '</th><th scope="col">' . Text::_('JGLOBAL_EMAIL') . '</th><th scope="col"></th><th scope="col"></th></tr></thead>';
 ?>
+<?php if ($this->frontend) : ?>
+	<h1><?php echo $item ? Text::sprintf('COM_RA_FOOTPATHS_INSPECTOR_TITLE', $this->escape($item->name)) : Text::_('COM_RA_FOOTPATHS_INSPECTOR_NEW'); ?></h1>
+	<p><a class="btn btn-secondary" href="<?php echo $this->link('view=inspectors'); ?>"><?php echo Text::_('COM_RA_FOOTPATHS_BACK_TO_INSPECTORS'); ?></a></p>
+<?php endif; ?>
 <?php if ($this->group <= 0) : ?>
 	<div class="alert alert-warning"><?php echo Text::_('COM_RA_FOOTPATHS_NO_GROUP'); ?></div>
 <?php endif; ?>
@@ -133,9 +136,8 @@ $userHead = '<thead><tr><th scope="col">' . Text::_('COM_RA_FOOTPATHS_COL_NAME')
 
 					<?php if ($this->canEdit) : ?>
 						<h3 class="h5"><?php echo Text::_('COM_RA_FOOTPATHS_FIND_USER'); ?></h3>
-						<form action="<?php echo Route::_('index.php'); ?>" method="get" class="d-flex gap-2 mb-2">
-							<input type="hidden" name="option" value="com_ra_footpaths">
-							<input type="hidden" name="view" value="inspector">
+						<form action="<?php echo $this->link('view=inspector&id=' . $id); ?>" method="get" class="d-flex gap-2 mb-2">
+							<?php echo $this->hiddenFields('inspector'); ?>
 							<input type="hidden" name="id" value="<?php echo $id; ?>">
 							<label class="visually-hidden" for="q"><?php echo Text::_('COM_RA_FOOTPATHS_FIND_USER'); ?></label>
 							<input type="search" class="form-control" id="q" name="q" minlength="2" value="<?php echo $this->escape($this->search); ?>" placeholder="<?php echo $this->escape(Text::_('COM_RA_FOOTPATHS_FIND_USER_HINT')); ?>">

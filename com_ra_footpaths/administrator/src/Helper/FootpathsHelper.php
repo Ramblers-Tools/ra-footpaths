@@ -40,7 +40,30 @@ final class FootpathsHelper
 			return true;
 		}
 
+		if (self::canManage($user)) {
+			return true;
+		}
+
 		$group = self::inspectorGroup();
+
+		return $group > 0 && \in_array($group, array_map('intval', $user->getAuthorisedGroups()), true);
+	}
+
+	/**
+	 * Footpath admins: Super Users and members of the group chosen in Options ("Footpath admins group"). They can
+	 * see the records and manage inspectors (logins, parishes) from the website as well as the administrator.
+	 */
+	public static function canManage(?User $user): bool
+	{
+		if ($user === null || $user->guest) {
+			return false;
+		}
+
+		if ($user->authorise('core.admin')) {
+			return true;
+		}
+
+		$group = (int) ComponentHelper::getParams('com_ra_footpaths')->get('manager_group', 0);
 
 		return $group > 0 && \in_array($group, array_map('intval', $user->getAuthorisedGroups()), true);
 	}

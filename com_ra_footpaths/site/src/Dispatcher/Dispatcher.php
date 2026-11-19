@@ -35,7 +35,16 @@ class Dispatcher extends ComponentDispatcher
 
 		$user = $this->app->getIdentity();
 
-		if (FootpathsHelper::canView($user)) {
+		// Managing inspectors (logins, parishes) is for footpath admins only.
+		$manage = \in_array($this->input->getCmd('view', ''), ['inspectors', 'inspector'], true)
+			|| str_starts_with(strtolower($this->input->getCmd('task', '')), 'inspector.');
+
+		if ($manage) {
+			// Its wording lives with the administrator pages.
+			$this->app->getLanguage()->load('com_ra_footpaths', JPATH_ADMINISTRATOR);
+		}
+
+		if ($manage ? FootpathsHelper::canManage($user) : FootpathsHelper::canView($user)) {
 			// Private records: no browser or proxy caching (Joomla then sends no-store headers).
 			$this->app->allowCache(false);
 

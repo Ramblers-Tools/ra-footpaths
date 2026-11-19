@@ -35,8 +35,12 @@ class HtmlView extends BaseHtmlView
 	/** @var array<int,object> The signed-in inspector's own parishes (empty for everyone else). */
 	protected array $mine = [];
 
+	/** Footpath admins get a "Manage inspectors" button. */
+	protected bool $canManage = false;
+
 	public function display($tpl = null): void
 	{
+		$this->canManage = \Ramblers\Component\Ra_footpaths\Administrator\Helper\FootpathsHelper::canManage($this->getCurrentUser());
 		$model = $this->getModel();
 		$this->items = $model->getItems();
 		$myIds = $model->getMyParishIds((int) $this->getCurrentUser()->id);

@@ -171,8 +171,13 @@ class InspectorModel extends BaseDatabaseModel
 		return $id;
 	}
 
-	/** Link a website login to the inspector and put it in the inspectors group. False if the user doesn't exist. */
-	public function link(int $id, int $userId): bool
+	/**
+	 * Link a website login to the inspector and put it in the inspectors group.
+	 *
+	 * @return string 'linked', 'nogroup' (linked, but Joomla refused the group change: only a Super User can change a
+	 *                Super User) or 'missing' (no such user or inspector)
+	 */
+	public function link(int $id, int $userId): string
 	{
 		$db = $this->getDatabase();
 		$exists = (int) $db->setQuery(
@@ -180,7 +185,7 @@ class InspectorModel extends BaseDatabaseModel
 		)->loadResult();
 
 		if (!$exists || !$this->getItem($id)) {
-			return false;
+			return 'missing';
 		}
 
 		$db->setQuery(
@@ -190,10 +195,18 @@ class InspectorModel extends BaseDatabaseModel
 		$group = FootpathsHelper::inspectorGroup();
 
 		if ($group > 0) {
-			UserHelper::addUserToGroup($userId, $group);
+			try {
+				UserHelper::addUserToGroup($userId, $group);
+			} catch (\Throwable $e) {
+				// Checked below.
+			}
+
+			if (!\in_array($group, array_map('intval', UserHelper::getUserGroups($userId)), true)) {
+				return 'nogroup';
+			}
 		}
 
-		return true;
+		return 'linked';
 	}
 
 	/** Unlink a login. Takes the user out of the inspectors group unless they are still linked to another inspector. */
