@@ -21,9 +21,12 @@ foreach ($this->items as $row) {
 ?>
 <div class="rafp rafp-parishes">
 	<h1>Footpath inspections</h1>
-	<?php if ($this->canManage) : ?>
-		<p class="rafp-manage-link"><a class="btn btn-sm btn-secondary" href="<?php echo RouteHelper::url('view=inspectors'); ?>">Manage inspectors</a></p>
-	<?php endif; ?>
+	<p class="rafp-manage-link">
+		<a class="btn btn-sm btn-secondary" href="<?php echo RouteHelper::url('view=reports'); ?>">Reports</a>
+		<?php if ($this->canManage) : ?>
+			<a class="btn btn-sm btn-secondary" href="<?php echo RouteHelper::url('view=inspectors'); ?>">Manage inspectors</a>
+		<?php endif; ?>
+	</p>
 	<p class="rafp-demo-note"><strong>Demo, read only.</strong> Records copied from the old Footpath Inspections Database. Nothing here can be changed yet, and changes made in the old system after the copy are not shown.</p>
 
 	<?php if ($this->mine) : ?>

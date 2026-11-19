@@ -3,7 +3,7 @@
 Joomla 5 component for footpath inspections, replacing East Cheshire Ramblers' old Footpath Inspections Database
 (plain PHP, 2002 to 2026).
 
-## What it does (version 0.7.0)
+## What it does (version 0.8.0)
 
 - **Parishes** (menu item type "Footpath parishes"): a Map / List switch (remembered in the browser). Map: every
   parish boundary, named and shaded by the share of its paths inspected in the last 12 months; click one for its
@@ -20,6 +20,38 @@ Joomla 5 component for footpath inspections, replacing East Cheshire Ramblers' o
   for footpath admins) and Options (inspector group, footpath admins group, photo folder). See "Inspectors in the admin" below.
 
 - **Record an inspection** (0.6.0, stage 2): see "Recording inspections" below.
+- **Reports** (0.8.0): the old system's "Choose a report" list. See "Reports" below.
+
+## Reports (0.8.0)
+
+"Reports" button on the parishes page (`view=reports`), for everyone who can see the records. Choose a report, a
+period (default: the last 12 months), parishes and fault types (none ticked = all), and whether to include photos.
+The report shows on the page; **Print or save as PDF** opens the browser's print window (A4 landscape, only the
+report is printed, photos are loaded first); **Download for a spreadsheet (CSV)** gives the same rows
+(`task=reports.csv`, UTF-8 with BOM, formula-safe, no-store).
+
+| Report | Paths listed |
+|---|---|
+| All paths | every active path inspected in the period, with its latest inspection in the period |
+| Class C / Class D paths | latest grade in the period is C / D |
+| New class D paths | D now, but not D at the inspection before |
+| Paths that have improved / deteriorated | latest grade better / worse than the inspection before |
+| Uninspected paths | no inspection in the period; shows the last inspection before it, or "Never" |
+| Classification summary | per parish: paths, inspected, A to D, not inspected (counts and % of the parish's paths) |
+| Fault type summary | faults graded B, C or D on every inspection in the period, by type, with a bar chart |
+
+Path reports show the previous grade, grade, date, inspector, remarks and each fault (type, grade, grid reference,
+description, follow-up notes, and photo thumbnails if asked for), grouped by parish in path order.
+
+Differences from the old system, on purpose:
+- "The inspection before" is the path's previous inspection at any date (the old system only looked back to a year
+  before the start date, so a path with no earlier inspection in that window never counted as improved or worse).
+- Grades are the inspection's grade, which is already raised to its worst fault (the old path reports used the
+  worst fault only, A if none).
+- A fault type filter keeps only paths whose latest inspection in the period found one of those faults, and shows
+  only those faults. The fault type summary also follows the parish filter (the old one ignored it).
+- PDFs are made by the browser, not on the server: the old system wrote every PDF to one shared `report.pdf` in its
+  web folder, readable by anyone with the address.
 
 ## Recording inspections (0.6.0)
 

@@ -139,3 +139,70 @@
 .rafp-note-form summary { cursor: pointer; color: #4A2160; }
 .rafp-note-form form { display: grid; gap: .4rem; max-width: 32rem; margin: .4rem 0 0; }
 .rafp-note-form .rafp-note-date { max-width: 11rem; }
+
+/* Reports */
+.rafp-report-form { border: 1px solid #e3ded3; border-radius: 8px; padding: .75rem 1rem; display: grid; gap: .75rem; }
+.rafp-report-form fieldset { margin: 0; padding: 0; border: 0; }
+.rafp-report-form legend { font-size: 1rem; font-weight: 700; margin: 0 0 .35rem; }
+.rafp-report-types { display: grid; gap: .35rem 1rem; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); }
+.rafp-report-types label { display: flex; gap: .5rem; align-items: flex-start; padding: .35rem .5rem; border-radius: 6px; cursor: pointer; }
+.rafp-report-types label:has(input:checked) { background: #f1ebf4; }
+.rafp-report-types input { margin-top: .3rem; }
+.rafp-report-types small { display: block; color: #555; font-size: .82rem; line-height: 1.3; }
+.rafp-report-dates { display: flex; flex-wrap: wrap; gap: .5rem 1rem; }
+.rafp-report-dates label { display: flex; align-items: center; gap: .4rem; font-weight: 600; }
+.rafp-report-dates input { width: auto; }
+.rafp-report-pick summary { cursor: pointer; font-weight: 600; }
+.rafp-report-pick .rafp-hint { margin: .35rem 0; }
+.rafp-report-checks { display: grid; gap: .1rem 1rem; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); font-size: .92rem; }
+.rafp-report-photos { font-weight: 600; }
+.rafp-report-head h2 { margin: 0 0 .25rem; }
+.rafp-report-head p { margin: 0 0 .5rem; }
+.rafp-report-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.rafp-report-parish { font-size: 1.15rem; margin: 1.25rem 0 .35rem; }
+.rafp-report-parish small { font-weight: 400; font-size: .85rem; color: #555; }
+.rafp-table-wrap { overflow-x: auto; }
+.rafp-report-table td small { color: #666; }
+.rafp-report-table tr.rafp-total th, .rafp-report-table tr.rafp-total td { font-weight: 700; border-top: 2px solid #999; }
+.rafp-report-table p { margin: 0 0 .25rem; }
+.rafp-rep-faults { list-style: none; margin: 0; padding: 0; }
+.rafp-rep-faults > li { margin: .2rem 0; }
+.rafp-rep-faults .rafp-grade { font-size: .75rem; }
+.rafp-rep-faults .rafp-gridref { color: #555; }
+.rafp-rep-event { margin-left: 1.5rem; font-size: .85rem; color: #444; }
+.rafp-report-table .rafp-photos img { width: 120px; height: 90px; }
+.rafp-nowrap { white-space: nowrap; }
+.rafp-none { color: #777; font-size: .85rem; }
+.rafp-bar-col { width: 40%; min-width: 8rem; }
+.rafp-bar { display: flex; height: 1rem; }
+.rafp-bar span { display: block; height: 100%; }
+.rafp-bar-b { background: var(--rafp-b); }
+.rafp-bar-c { background: var(--rafp-c); }
+.rafp-bar-d { background: var(--rafp-d); }
+
+/* Printing a report (or saving it as a PDF): only the report, landscape, grades keep their colours. */
+@media print {
+	@page { size: A4 landscape; margin: 12mm; }
+	/* Hide everything that is neither the report, inside it, nor around it (works with any site template). */
+	body:has(.rafp-report) *:not(:has(.rafp-report)):not(.rafp-report):not(.rafp-report *) { display: none !important; }
+	body:has(.rafp-report) *:has(.rafp-report) { margin: 0 !important; padding: 0 !important; border: 0 !important; box-shadow: none !important; background: none !important; max-width: none !important; width: auto !important; }
+	.rafp-noprint { display: none !important; }
+	.rafp-report { font-size: 10pt; color: #000; }
+	.rafp-report a { color: #000; text-decoration: none; }
+	.rafp-table-wrap { overflow: visible; }
+	.rafp-report-table tr, .rafp-rep-faults > li { break-inside: avoid; }
+	.rafp-report-parish { break-after: avoid; }
+	.rafp-grade, .rafp-bar span { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+.rafp-report-choose { margin: 0 0 1.5rem; }
+.rafp-report-choose > summary { cursor: pointer; font-weight: 700; font-size: 1.05rem; margin: 0 0 .5rem; }
+.rafp-report-choose .rafp-report-form { margin: 0; }
+
+/* Path reports on a phone: one block per path instead of a wide table. */
+@media (max-width: 640px) {
+	.rafp-report-paths thead { display: none; }
+	.rafp-report-paths tr { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .9rem; padding: .6rem 0; border-bottom: 1px solid #e3ded3; }
+	.rafp-report-paths th, .rafp-report-paths td { border: 0; padding: 0; }
+	.rafp-report-paths td[data-label]::before { content: attr(data-label) " "; font-size: .8rem; color: #555; }
+	.rafp-report-paths td.rafp-remarks { flex-basis: 100%; max-width: none; }
+}
