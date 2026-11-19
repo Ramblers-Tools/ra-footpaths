@@ -14,6 +14,15 @@
 		boxes.forEach((b) => b.addEventListener('change', update));
 	});
 
+	// Lazy loaders (such as JCH Optimize) keep the real address in data-src until an image scrolls into view, which a
+	// printout never does. Load them all before printing, including with the browser's own Print (Ctrl+P).
+	const loadAll = () => document.querySelectorAll('.rafp-report img').forEach((img) => {
+		img.loading = 'eager';
+		if (img.dataset.srcset) { img.srcset = img.dataset.srcset; }
+		if (img.dataset.src && img.getAttribute('src') !== img.dataset.src) { img.src = img.dataset.src; }
+	});
+	window.addEventListener('beforeprint', loadAll);
+
 	const button = document.querySelector('[data-rafp-print]');
 
 	if (!button) {
@@ -21,8 +30,8 @@
 	}
 
 	button.addEventListener('click', () => {
+		loadAll();
 		const images = [...document.querySelectorAll('.rafp-report img')];
-		images.forEach((img) => { img.loading = 'eager'; });
 		const waits = images.filter((img) => !img.complete).map((img) => new Promise((done) => {
 			img.addEventListener('load', done, { once: true });
 			img.addEventListener('error', done, { once: true });

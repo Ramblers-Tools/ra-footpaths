@@ -75,10 +75,35 @@ class HtmlView extends BaseHtmlView
 		if ($logo !== '') {
 			// Media field values carry "#joomlaImage://..." after the path; local paths are relative to the site.
 			$logo = HTMLHelper::_('cleanImageURL', $logo)->url;
-			$logo = preg_match('#^(https?:)?//#i', $logo) ? $logo : Uri::root(true) . '/' . ltrim($logo, '/');
+			$logo = preg_match('#^(https?:)?//#i', $logo) ? $logo : (self::inline($logo) ?? Uri::root(true) . '/' . ltrim($logo, '/'));
 		}
 
 		return ['logo' => $logo, 'name' => trim((string) $params->get('report_name', ''))];
+	}
+
+	/**
+	 * A local logo as a data: address. Page optimisers (JCH Optimize on the ECR site) swap ordinary images for a blurred
+	 * placeholder until they scroll into view, and the logo is hidden until printing, so it would print blurred.
+	 * Embedding it avoids that. Null when the file is missing, not an image, or over 512 KB.
+	 */
+	private static function inline(string $path): ?string
+	{
+		$file = realpath(JPATH_ROOT . '/' . ltrim(rawurldecode(strtok($path, '?#')), '/'));
+		$root = realpath(JPATH_ROOT);
+
+		if ($file === false || $root === false || !str_starts_with($file, $root . DIRECTORY_SEPARATOR) || !is_file($file)
+			|| filesize($file) > 524288) {
+			return null;
+		}
+
+		$info = @getimagesize($file);
+		$types = [IMAGETYPE_JPEG => 'image/jpeg', IMAGETYPE_PNG => 'image/png', IMAGETYPE_GIF => 'image/gif', IMAGETYPE_WEBP => 'image/webp'];
+
+		if ($info === false || !isset($types[$info[2]])) {
+			return null;
+		}
+
+		return 'data:' . $types[$info[2]] . ';base64,' . base64_encode((string) file_get_contents($file));
 	}
 
 	public function title(): string
