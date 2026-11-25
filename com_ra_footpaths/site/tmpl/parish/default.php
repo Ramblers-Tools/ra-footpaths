@@ -77,7 +77,12 @@ foreach ($this->paths as $p) {
 				<td class="num<?php echo $isDue ? ' rafp-due' : ''; ?>"><?php echo $p->inspection_date ? HTMLHelper::_('date', $p->inspection_date, 'j M Y') : 'Never'; ?></td>
 				<td class="rafp-hide-sm"><?php echo $this->escape((string) $p->inspector); ?></td>
 				<td class="num rafp-hide-sm"><?php echo (int) $p->faults ?: ''; ?></td>
-				<td class="rafp-remarks rafp-hide-sm"><?php echo $this->escape(mb_strlen($remarks) > 140 ? mb_substr($remarks, 0, 140) . '…' : $remarks); ?></td>
+				<td class="rafp-remarks rafp-hide-sm"><?php
+					// The latest inspection's remarks, then each fault's comment, in full.
+					if ($remarks !== '') : ?><p><?php echo nl2br($this->escape($remarks)); ?></p><?php endif;
+					foreach ($p->fault_remarks as $f) : ?>
+						<p class="rafp-fault-remark"><strong><?php echo $this->escape(ucfirst((string) ($f->type ?: 'Fault'))); ?>:</strong> <?php echo nl2br($this->escape(trim((string) $f->remarks))); ?></p>
+					<?php endforeach; ?></td>
 			</tr>
 		<?php endforeach; ?>
 		</tbody>

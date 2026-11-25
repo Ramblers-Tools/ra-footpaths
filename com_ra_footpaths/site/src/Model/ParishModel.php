@@ -49,7 +49,34 @@ class ParishModel extends BaseDatabaseModel
 			. ' LEFT JOIN ' . $db->quoteName('#__ra_footpaths_inspectors', 'ins') . ' ON ins.id = lp.inspector_id'
 			. ' ORDER BY p.sort_key, p.number';
 
-		return $db->setQuery($sql)->loadObjectList();
+		$paths = $db->setQuery($sql)->loadObjectList();
+
+		// The latest inspection's fault comments as well: inspectors often write the comment on the fault.
+		$byInspection = [];
+
+		foreach ($paths as $p) {
+			$p->fault_remarks = [];
+
+			if ($p->inspection_id) {
+				$byInspection[(int) $p->inspection_id] = $p;
+			}
+		}
+
+		if ($byInspection) {
+			$query = $db->getQuery(true)
+				->select(['f.inspection_id', 'f.remarks', 'ft.name AS type'])
+				->from($db->quoteName('#__ra_footpaths_faults', 'f'))
+				->join('LEFT', $db->quoteName('#__ra_footpaths_fault_types', 'ft'), 'ft.id = f.fault_type_id')
+				->whereIn($db->quoteName('f.inspection_id'), array_keys($byInspection))
+				->where('TRIM(COALESCE(f.remarks, \'\')) <> \'\'')
+				->order('f.id');
+
+			foreach ($db->setQuery($query)->loadObjectList() as $f) {
+				$byInspection[(int) $f->inspection_id]->fault_remarks[] = $f;
+			}
+		}
+
+		return $paths;
 	}
 
 	/** @return string[] names of the inspectors who look after this parish */

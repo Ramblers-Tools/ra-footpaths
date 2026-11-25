@@ -308,8 +308,52 @@ ra.display.footpaths = function (options, data) {
 			pickable();
 		}
 
+		showOnMap();
+
 		pickOsLayer();
 	};
+
+	// Path page: "Show on map" by a fault moves the map to it and marks it with a flashing red X (as the old
+	// system did). On a phone, where the map is above the list, the page scrolls up to the map first.
+	function showOnMap() {
+		var x = null;
+		var chosen = null;
+		var icon = L.divIcon({
+			className: "rafp-x",
+			html: '<svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true"><path d="M9 9l30 30M39 9L9 39" stroke="#fff" stroke-width="13" stroke-linecap="round"/><path d="M9 9l30 30M39 9L9 39" stroke="#d50000" stroke-width="7" stroke-linecap="round"/></svg>',
+			iconSize: [48, 48],
+			iconAnchor: [24, 24]
+		});
+		document.addEventListener("click", function (e) {
+			var button = e.target.closest ? e.target.closest(".rafp-show-on-map") : null;
+			if (!button) {
+				return;
+			}
+			var at = L.latLng(parseFloat(button.getAttribute("data-lat")), parseFloat(button.getAttribute("data-lng")));
+			if (isNaN(at.lat) || isNaN(at.lng)) {
+				return;
+			}
+			var box = document.getElementById(options.divId);
+			var r = box.getBoundingClientRect();
+			if (r.bottom < 0 || r.top > window.innerHeight) {
+				box.scrollIntoView({behavior: "smooth", block: "center"});
+			}
+			if (x) {
+				map.removeLayer(x);
+			}
+			if (chosen) {
+				chosen.classList.remove("rafp-on-map");
+			}
+			chosen = button.closest(".rafp-fault");
+			if (chosen) {
+				chosen.classList.add("rafp-on-map");
+			}
+			x = L.marker(at, {icon: icon, interactive: false, keyboard: false, zIndexOffset: 1000}).addTo(map);
+			x.bindTooltip(button.getAttribute("data-label") || "Fault", {permanent: false});
+			// About 250 m around the fault: close enough to see the spot, with the path either side.
+			map.fitBounds(at.toBounds(250), {maxZoom: 17});
+		});
+	}
 
 	function picked(e) {
 		document.dispatchEvent(new CustomEvent("rafp-map-pick", {detail: {lat: e.latlng.lat, lng: e.latlng.lng}}));

@@ -45,7 +45,7 @@ class HtmlView extends BaseHtmlView
 		$wa->getRegistry()->addExtensionRegistryFile('com_ra_footpaths');
 		$wa->useStyle('com_ra_footpaths.site');
 
-		$this->mapHtml = MapHelper::render($this->mapData(), '420px');
+		$this->mapHtml = MapHelper::render($this->mapData(), '520px');
 
 		$this->getDocument()->setTitle($this->name() . ', ' . $this->path->parish);
 		$this->getDocument()->setMetaData('robots', 'noindex, nofollow');

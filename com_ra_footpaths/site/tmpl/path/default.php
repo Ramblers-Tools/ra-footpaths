@@ -55,7 +55,12 @@ $renderInspection = function (object $inspection) use ($date, $noteForm): void {
 					<div class="rafp-fault-head">
 						<?php echo FootpathsHelper::gradeChip($fault->grade ?: $inspection->grade); ?>
 						<span><?php echo $this->escape(ucfirst((string) ($fault->type ?: 'Fault'))); ?></span>
-						<?php if ($fault->gridref) : ?><span class="rafp-gridref"><?php echo $this->escape($fault->gridref); ?></span><?php endif; ?>
+						<?php if ($fault->lat !== null && $fault->lng !== null && (float) $fault->lat !== 0.0) : ?>
+							<button type="button" class="rafp-show-on-map" data-lat="<?php echo (float) $fault->lat; ?>" data-lng="<?php echo (float) $fault->lng; ?>" data-label="<?php echo $this->escape(ucfirst((string) ($fault->type ?: 'Fault')) . ', ' . $date($inspection->inspection_date)); ?>">
+								<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+								Show on map<?php echo $fault->gridref ? ' <span class="rafp-gridref">' . $this->escape($fault->gridref) . '</span>' : ''; ?>
+							</button>
+						<?php elseif ($fault->gridref) : ?><span class="rafp-gridref"><?php echo $this->escape($fault->gridref); ?></span><?php endif; ?>
 					</div>
 					<?php if (trim((string) $fault->remarks) !== '') : ?>
 						<p><?php echo nl2br($this->escape(trim((string) $fault->remarks))); ?></p>
@@ -129,9 +134,13 @@ $renderInspection = function (object $inspection) use ($date, $noteForm): void {
 		<p class="rafp-record small text-muted">To record inspections, your website login needs linking to your inspector record: ask the footpaths secretary.</p>
 	<?php endif; ?>
 
-	<?php echo $this->mapHtml; ?>
-	<p class="small text-muted">This path is in its grade colour; the parish's other paths are grey. Dots are fault positions: click one to open its report.</p>
+	<div class="rafp-path-layout">
+	<aside class="rafp-path-map">
+		<?php echo $this->mapHtml; ?>
+		<p class="small text-muted">This path is in its grade colour; the parish's other paths are grey. Dots are fault positions: click one to open its report. "Show on map" by a fault marks it with a flashing X.</p>
+	</aside>
 
+	<div class="rafp-path-history">
 	<h2>Inspection history</h2>
 	<?php if (!$this->inspections) : ?>
 		<p>No inspections recorded for this path.</p>
@@ -149,4 +158,6 @@ $renderInspection = function (object $inspection) use ($date, $noteForm): void {
 			} ?>
 		</details>
 	<?php endif; ?>
+	</div>
+	</div>
 </div>

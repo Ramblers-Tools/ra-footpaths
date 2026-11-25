@@ -213,3 +213,25 @@
 	.rafp-report-paths td[data-label]::before { content: attr(data-label) " "; font-size: .8rem; color: #555; }
 	.rafp-report-paths td.rafp-remarks { flex-basis: 100%; max-width: none; }
 }
+
+/* Parish list: remarks in full, the latest inspection's then each fault's comment. */
+.rafp-table .rafp-remarks p { margin: 0 0 .3rem; }
+.rafp-table .rafp-remarks p:last-child { margin-bottom: 0; }
+
+/* Path page: the map beside the inspection history on wide screens, staying in view while scrolling. */
+@media (min-width: 992px) {
+	.rafp-path-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+	.rafp-path-map { order: 2; position: sticky; top: 1rem; }
+	.rafp-path-history { order: 1; }
+	.rafp-path-history > h2:first-child { margin-top: 0; }
+}
+.rafp-show-on-map { display: inline-flex; align-items: center; gap: .3rem; margin-left: .25rem; padding: .15rem .55rem; border: 1px solid #c62828; border-radius: 999px; background: #fff; color: #a51d1d; font-size: .85rem; font-weight: 600; line-height: 1.4; cursor: pointer; }
+.rafp-show-on-map:hover, .rafp-show-on-map:focus-visible { background: #fdecea; }
+.rafp-show-on-map .rafp-gridref { color: #555; font-weight: 400; }
+.rafp-fault.rafp-on-map { outline: 3px solid #c62828; outline-offset: 2px; border-radius: 4px; }
+
+/* The flashing X that marks a fault chosen with "Show on map". */
+.leaflet-marker-icon.rafp-x { background: none; border: 0; }
+.rafp-x svg { display: block; animation: rafp-x-flash .5s steps(1, end) 8; }
+@keyframes rafp-x-flash { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .rafp-x svg { animation: none; } }
